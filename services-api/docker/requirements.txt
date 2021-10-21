@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+#graphene==2.1.6
+#graphene-pydantic==0.1.0
+#pydantic
+
+#numpy
+#requests
+pymongo[srv]
