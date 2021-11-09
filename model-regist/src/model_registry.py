@@ -568,7 +568,7 @@ def display_component(n_clicks, children):
                 'type': 'dynamic-dropdown',
                 'index': n_clicks
             },
-            options=[{'label': i, 'value': i} for i in ['int', 'float', 'str', 'slider','dropdown','radio','bool']]
+            options=[{'label': i, 'value': i} for i in ['int', 'float', 'str', 'slider','dropdown','radio','bool','graph']]
         ),
         html.Div(
             id={
@@ -587,7 +587,7 @@ def make_form_input(i):
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="name id"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="text", placeholder="value"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="text", placeholder="default value"),
         ]
     )
     return form_input
@@ -600,7 +600,7 @@ def make_form_slider(i):
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "min"},   type="number", placeholder="min"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "max"},   type="number", placeholder="max"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "step"},  type="number", placeholder="step"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="number", placeholder="value"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="number", placeholder="default value"),
             dbc.Label("Input marks following: value1, label1, value2, label2..."),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "marks"}, type="text", placeholder="marks"),
         ]
@@ -613,7 +613,7 @@ def make_form_dropdown(i):
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},   type="text", placeholder="name id"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"},  type="text", placeholder="title"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"},  type="text", placeholder="value"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"},  type="text", placeholder="default value"),
             dbc.Label("Input options following: label1, value1, label2, value2..."),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "options"}, type="text", placeholder="options"),
         ]
@@ -626,7 +626,7 @@ def make_form_radio(i):
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},    type="text", placeholder="name id"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"},   type="text", placeholder="title"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"},   type="text", placeholder="value"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"},   type="text", placeholder="default value"),
             dbc.Label("Input options following: label1, value1, label2, value2..."),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "options"}, type="text", placeholder="options"),
         ]
@@ -639,10 +639,20 @@ def make_form_bool(i):
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="name id"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="text", placeholder="value"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="text", placeholder="default value"),
         ]
     )
     return form_bool
+
+
+def make_form_graph(i):
+    form_graph = dbc.Form(
+        [
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="name id"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title"),
+        ]
+    )
+    return form_graph
 
 
 @app.callback(
@@ -664,6 +674,8 @@ def display_output(value, n_cliks):
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_radio(i)])
     elif value == 'bool':
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_bool(i)])
+    elif value == 'graph':
+        return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_graph(i)])
     else:
         return ""
 
@@ -799,6 +811,7 @@ def show_dynamic_gui_layouts(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'gui-check' in changed_id:
         if bool(data):
+            print(f'gui parameters data\n{data["gui_parameters"]}')
             item_list = JSONParameterEditor( _id={'type': 'parameter_editor'},   # pattern match _id (base id), name
                                              json_blob=data["gui_parameters"],
                                             )

@@ -9,6 +9,11 @@ import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 import dash_daq as daq
 
+import base64
+import PIL.Image
+import io
+import plotly.express as px
+
 from dash.dependencies import Input, ALL, Output, State
 
 from targeted_callbacks import targeted_callback
@@ -165,23 +170,66 @@ class GraphItem(dbc.FormGroup):
                  base_id,
                  title=None,
                  visible=True,
+                 figure = None,
                  **kwargs):
 
+        self.name = name
         self.label = dbc.Label(title or name)
-        self.input = dcc.Graph(id={**base_id,
-                                    'name': name,
+        self.input_graph = dcc.Graph(id={**base_id,
+                                    'name': self.name,
                                     'layer': 'input'},
-                                **kwargs)
+                                **kwargs) # better to use python object for image
+                                
+        self.input_upload = dcc.Upload(id={**base_id,
+                                    'name': self.name+'_upload',
+                                    'layer': 'input'},
+                                    children=html.Div([
+                                        'Drag and Drop or ',
+                                        html.A('Select Files')
+                                    ]),
+                                    style={
+                                        'width': '95%',
+                                        'height': '60px',
+                                        'lineHeight': '60px',
+                                        'borderWidth': '1px',
+                                        'borderStyle': 'dashed',
+                                        'borderRadius': '5px',
+                                        'textAlign': 'center',
+                                        'margin': '10px'
+                        },
+                        multiple = False)
 
         style = {}
         if not visible:
             style['display'] = 'none'
 
         super(GraphItem, self).__init__(id={**base_id,
-                                           'name': name,
+                                           'name': self.name,
                                            'layer': 'form_group'},
-                                       children=[self.label, self.input],
+                                       children=[self.label, self.input_upload, self.input_graph],
                                        style=style)
+    def return_upload(self, contents):
+        img_bytes = base64.b64decode(contents.split(",")[1])
+        img = PIL.Image.open(io.BytesIO(img_bytes))
+        fig = px.imshow(img, binary_string=True)
+        return fig 
+        
+    def init_callbacks(self, app):
+        targeted_callback(self.return_upload,
+                          Input({**self.id,
+                                 'name': self.name+'_upload',
+                                 'layer': 'input'},
+                                'contents'),
+                          Output({**self.id,
+                                 'name': self.name,
+                                 'layer': 'input'}, 'figure'),
+                          State({**self.id,
+                                 'name': self.name+'_upload',
+                                 'layer': 'input'}, 'last_modified'),
+                          State({**self.id,
+                                 'name': self.name+'_upload',
+                                 'layer': 'input'}, 'filename'),
+                          app=app)
 
 
 
@@ -198,16 +246,20 @@ class ParameterEditor(dbc.Form):  #initialize dbc form object with input paramet
         super(ParameterEditor, self).__init__(id=_id, children=[], className='kwarg-editor', **kwargs)
         self.children = self.build_children()
 
-    def init_callbacks(self, app):   
+    def init_callbacks(self, app):    # callback later
         targeted_callback(self.stash_value,
                           Input({**self.id,
                                  'name': ALL},
                                 'value'),
-                          Output(self.id, 'n_submit'),
+                          Output(self.id, 'n_submit'),   # ?
                           State(self.id, 'n_submit'),
                           app=app)
-
-    def stash_value(self, value):   
+        for child in self.children:
+            if hasattr(child,"init_callbacks"):
+                child.init_callbacks(app)
+     
+    
+    def stash_value(self, value):  # update changed value 
         # find the changed item name from regex
         r = '(?<=\"name\"\:\")[\w\-_]+(?=\")'
         matches = re.findall(r, dash.callback_context.triggered[0]['prop_id'])
@@ -220,11 +272,11 @@ class ParameterEditor(dbc.Form):  #initialize dbc form object with input paramet
 
         print(self.values)
 
-        return next(iter(dash.callback_context.states.values())) or 0 + 1
+        return (next(iter(dash.callback_context.states.values())) or 0) + 1   # what is returned here? this updates n_submit
 
     @property
     def values(self):
-        return {param['name']: param.get('value', None) for param in self._parameters}
+        return {param['name']: param.get('value', None) for param in self._parameters}    # what do these property decorator funcs do?
 
     @property
     def parameters(self):
@@ -248,7 +300,7 @@ class ParameterEditor(dbc.Form):  #initialize dbc form object with input paramet
                 parameter_dict['value'] = values[parameter_dict['name']]
             type = self._determine_type(parameter_dict)
             parameter_dict.pop('type', None)
-            item = self.type_map[type](**parameter_dict, base_id=self.id)
+            item = self.type_map[type](**parameter_dict, base_id=self.id)   # where does self.type_map come from?
             children.append(item)
 
         return children
