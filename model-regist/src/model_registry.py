@@ -149,6 +149,13 @@ form_regist = dbc.Form(
         ),
         dbc.FormGroup(
             [
+                dbc.Label("Enter reference for the model.", className="mr-2"),
+                dbc.Input(id="reference-regist", type="text", placeholder="Enter reference.",debounce=True),
+            ],
+            className="mr-3",
+        ),
+        dbc.FormGroup(
+            [
                 dbc.Label("Enter description (optional) for the model.", className="mr-2"),
                 dbc.Input(id="description-regist", type="text", placeholder="Enter description.",debounce=True),
                 html.P(id = "regist-response2"),
@@ -266,9 +273,7 @@ register_model = dbc.Card(
             size="sm",
             n_clicks=0,
             ),
-            html.Div([
-                html.Div(id='dynamic-gui-container', children=[]),
-            ]),
+            html.Div(id='dynamic-gui-container', children=[]),
         ]),
     ]
 )
@@ -587,6 +592,7 @@ def make_form_input(i):
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="name id"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},   type="text", placeholder="key"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="text", placeholder="default value"),
         ]
     )
@@ -597,6 +603,7 @@ def make_form_slider(i):
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="name id"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},   type="text", placeholder="key"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "min"},   type="number", placeholder="min"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "max"},   type="number", placeholder="max"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "step"},  type="number", placeholder="step"),
@@ -613,9 +620,10 @@ def make_form_dropdown(i):
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},   type="text", placeholder="name id"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"},  type="text", placeholder="title"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},    type="text", placeholder="key"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"},  type="text", placeholder="default value"),
             dbc.Label("Input options following: label1, value1, label2, value2..."),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "options"}, type="text", placeholder="options"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "options"},type="text", placeholder="options"),
         ]
     )
     return form_dropdown
@@ -626,6 +634,7 @@ def make_form_radio(i):
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},    type="text", placeholder="name id"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"},   type="text", placeholder="title"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},     type="text", placeholder="key"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"},   type="text", placeholder="default value"),
             dbc.Label("Input options following: label1, value1, label2, value2..."),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "options"}, type="text", placeholder="options"),
@@ -639,6 +648,7 @@ def make_form_bool(i):
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="name id"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},   type="text", placeholder="key"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="text", placeholder="default value"),
         ]
     )
@@ -650,6 +660,7 @@ def make_form_graph(i):
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="name id"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},   type="text", placeholder="key"),
         ]
     )
     return form_graph
@@ -688,6 +699,7 @@ def display_output(value, n_cliks):
     Input("model-type", "value"),
     Input("user-regist", "value"),
     Input("uri-regist", "value"),
+    Input("reference-regist", "value"),
     Input("description-regist", "value"),
     Input("application-regist", "value"),
     Input("cmd-regist", "value"),
@@ -697,9 +709,9 @@ def display_output(value, n_cliks):
 
     prevent_initial_call=True
     )
-def json_generator(component_type, name, version, model_type, user, uri, description, applications, cmds, children, n, n_clicks):
-    keys = ["model_name","version","type","user","uri","description"]
-    items = [name, version, model_type, user, uri, description]
+def json_generator(component_type, name, version, model_type, user, uri, reference, description, applications, cmds, children, n, n_clicks):
+    keys = ["model_name","version","type","user","uri","reference", "description"]
+    items = [name, version, model_type, user, uri, reference, description]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     #print(f'gui container children\n{children}')
     json_document = json_file.copy()  # shallow copy
