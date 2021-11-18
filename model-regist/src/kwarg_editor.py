@@ -96,7 +96,7 @@ class SliderItem(dbc.FormGroup):
 class DropdownItem(dbc.FormGroup):
     def __init__(self,
                  name,       
-                 base_id,   # shared by all components
+                 base_id,  
                  title=None,
                  param_key=None,
                  debounce=True,
@@ -195,7 +195,7 @@ class GraphItem(dbc.FormGroup):
                                     'name': self.name,
                                     'param_key': param_key,
                                     'layer': 'input'},
-                                **kwargs) # better to use python object for image
+                                **kwargs)
                                 
         self.input_upload = dcc.Upload(id={**base_id,
                                     'name': self.name+'_upload',
@@ -252,7 +252,7 @@ class GraphItem(dbc.FormGroup):
 
 
 
-class ParameterEditor(dbc.Form):  #initialize dbc form object with input parameters (for each component)
+class ParameterEditor(dbc.Form):
 
     type_map = {float: FloatItem,
                 int: IntItem,
@@ -265,12 +265,12 @@ class ParameterEditor(dbc.Form):  #initialize dbc form object with input paramet
         super(ParameterEditor, self).__init__(id=_id, children=[], className='kwarg-editor', **kwargs)
         self.children = self.build_children()
 
-    def init_callbacks(self, app):    # callback later
+    def init_callbacks(self, app):
         targeted_callback(self.stash_value,
                           Input({**self.id,
                                  'name': ALL},
                                 'value'),
-                          Output(self.id, 'n_submit'),   # ?
+                          Output(self.id, 'n_submit'),
                           State(self.id, 'n_submit'),
                           app=app)
         for child in self.children:
@@ -291,11 +291,11 @@ class ParameterEditor(dbc.Form):  #initialize dbc form object with input paramet
 
         print(self.values)
 
-        return (next(iter(dash.callback_context.states.values())) or 0) + 1   # what is returned here? this updates n_submit
+        return (next(iter(dash.callback_context.states.values())) or 0) + 1   
 
     @property
     def values(self):
-        return {param['name']: param.get('value', None) for param in self._parameters}    # what do these property decorator funcs do?
+        return {param['name']: param.get('value', None) for param in self._parameters} 
 
     @property
     def parameters(self):
@@ -319,7 +319,7 @@ class ParameterEditor(dbc.Form):  #initialize dbc form object with input paramet
                 parameter_dict['value'] = values[parameter_dict['name']]
             type = self._determine_type(parameter_dict)
             parameter_dict.pop('type', None)
-            item = self.type_map[type](**parameter_dict, base_id=self.id)   # where does self.type_map come from?
+            item = self.type_map[type](**parameter_dict, base_id=self.id) 
             children.append(item)
 
         return children
