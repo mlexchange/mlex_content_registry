@@ -1,6 +1,6 @@
 from debian:11
 #FROM python:3.9
-MAINTAINER Zhuowen Zhao
+MAINTAINER THE MLEXCHANGE TEAM
 
 RUN apt-get update
 
