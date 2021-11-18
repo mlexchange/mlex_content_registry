@@ -1,1 +1,3 @@
+model-regist/src/__pycache__/*
 .DS_Store
+model-regist/src/kwarg_editor_copy.py
