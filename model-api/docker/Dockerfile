@@ -17,9 +17,11 @@ RUN pip3 install --upgrade pip &&\
 
 #EXPOSE 8000
 
-WORKDIR /app/services
-ENV HOME /app/services
+WORKDIR /app/api
+ENV HOME /app/api
 COPY src src
 ENV PYTHONUNBUFFERED=1
 
-CMD ["bash"]
+CMD bash
+WORKDIR /app/api/src
+CMD uvicorn model_api:app --host 0.0.0.0 --port 8000 --reload

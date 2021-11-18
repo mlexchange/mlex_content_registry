@@ -420,7 +420,7 @@ def model_list_GET_call():
     """
     Get the whole model registry data from the fastapi url.
     """
-    url = 'http://service-api:8000/api/v0/model-list'
+    url = 'http://model-api:8000/api/v0/model-list'
     #url = 'http://localhost:8000/api/v0/model-list'
     response = urllib.request.urlopen(url)
     data = json.loads(response.read())

@@ -1,38 +1,9 @@
 version: "3.9"
 
 services:
-  service-registry:
-    restart: "unless-stopped"
-    container_name: "service-registry"
-    user: "${UID}:${GID}"
-    build:
-      context: "services/"
-      dockerfile: "docker/Dockerfile"
-    command: "python src/service_registry.py"
-    environment:
-      DATA_DIR: "${COMPOSE_PROJECT_NAME}_services"
-    volumes:
-      - ./services/data:/app/sevices/data    # local repo:docker host repo, each container will have their own root path defined in the Dockerfile
-      - ./services/src:/app/services/src
-    ports:
-      - "8052:8052"     # HOST_PORT:CONTAINER_PORT, no need to explicitly specify this port number if only used within the same docker environment
-      
-  service-api:
-    restart: "unless-stopped"
-    container_name: "service-api"
-    user: "${UID}:${GID}"
-    build:
-      context: "services-api/"
-      dockerfile: "docker/Dockerfile"
-    #expose:
-      #- "8000"
-    ports:
-      - "8000:8000"
-      
   model-registry:
     restart: "unless-stopped"
     container_name: "model-registry"
-    user: "${UID}:${GID}"
     build:
       context: "model-regist/"
       dockerfile: "docker/Dockerfile"
@@ -44,6 +15,17 @@ services:
       - ./model-regist/src:/app/model-regist/src
     ports:
       - "8051:8051"     # you can change the port number in your dash.app
+
+  model-api:
+    restart: "unless-stopped"
+    container_name: "model-api"
+    build:
+      context: "model-api/"
+      dockerfile: "docker/Dockerfile"
+    expose:
+      - "8000"
+    ports:
+      - "8000:8000"
 
 volumes: #create named dir and link it to the data folder, so all services can use
   data-m:
