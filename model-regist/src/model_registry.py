@@ -119,7 +119,6 @@ form_regist = dbc.Form(
             [
                 dbc.Label("Please give a name for the model.", className="mr-2"),
                 dbc.Input(id="name-regist", type="text", placeholder="Enter model name.", debounce=True),
-                html.P(id = "regist-response0"), 
             ],
             className="mr-3",
         ),
@@ -127,7 +126,6 @@ form_regist = dbc.Form(
             [
                 dbc.Label("Please provide the version for the model.", className="mr-2"),
                 dbc.Input(id="version-regist", type="text", placeholder="Enter model version.", debounce=True),
-                html.P(id = "regist-response4"),
             ],
             className="mr-3",
         ),
@@ -135,7 +133,6 @@ form_regist = dbc.Form(
             [
                 dbc.Label("Please provide user name for the model.", className="mr-2"),
                 dbc.Input(id="user-regist", type="text", placeholder="Enter user name.", debounce=True),
-                html.P(id = "regist-response5"),
             ],
             className="mr-3",
         ),
@@ -143,7 +140,6 @@ form_regist = dbc.Form(
             [
                 dbc.Label("Please provide the URI for the model.", className="mr-2"),
                 dbc.Input(id="uri-regist", type="text", placeholder="Enter the URI.", debounce=True),
-                html.P(id = "regist-response1"),
             ],
             className="mr-3",
         ),
@@ -158,7 +154,6 @@ form_regist = dbc.Form(
             [
                 dbc.Label("Enter description (optional) for the model.", className="mr-2"),
                 dbc.Input(id="description-regist", type="text", placeholder="Enter description.",debounce=True),
-                html.P(id = "regist-response2"),
             ],
             className="mr-3",
         ),
@@ -166,7 +161,6 @@ form_regist = dbc.Form(
             [
                 dbc.Label("Enter application(s) for the model (e.g., image segmentation). Use comma to separate.", className="mr-2"),
                 dbc.Input(id="application-regist", type="text", placeholder="Enter applications for this model",debounce=True),
-                html.P(id = "regist-response3"),
             ],
             className="mr-3",
         ),
@@ -211,31 +205,23 @@ register_model = dbc.Card(
             n_clicks=0,
             ),
             html.Hr(),
-            dbc.Form(
-            [
-                dbc.FormGroup(
+            html.Div(
                 [
                     dbc.Button(
                         "Generate Model Document",
                         id="generate-json",
-                        className="mr-1",
+                        className="mr-2",
                         color="success",
                         size="sm",
-                        n_clicks=0,
-                        ),
-                ]
-                ),
-                dbc.FormGroup(
-                [
+                        style={'width':'40%'}
+                    ),
                     html.Div([
                         html.Button("Download Model Document", id="btn-download-txt"),
                         dcc.Download(id="download-text")
                     ]),
-                ]
-                )
-                
-            ],
-            inline=True
+                ],
+                className='row',
+                style={'align-items': 'center', 'justify-content': 'center'}
             ),
             html.Hr(),
             form_regist,
@@ -250,7 +236,7 @@ register_model = dbc.Card(
                     id = 'model-type',
                     value = 'supervised',
                     inline = True,
-                    labelStyle={'margin': '10px'}
+                    labelStyle={'margin': '6px'}
                 ),
             ],
             ),
@@ -263,6 +249,7 @@ register_model = dbc.Card(
             className="mr-1",
             color="success",
             size="sm",
+            style={'width':'40%'},
             n_clicks=0,
             ),
             dbc.Button(
@@ -271,6 +258,7 @@ register_model = dbc.Card(
             className="mr-1",
             color="success",
             size="sm",
+            style={'width':'40%'},
             n_clicks=0,
             ),
             html.Div(id='dynamic-gui-container', children=[]),
@@ -285,21 +273,26 @@ upload_model = dbc.Card(
         dbc.CardBody([
             dbc.Form(
                 [
-                   dbc.Button(
-                        "Validate Model Document",
-                        id="button-validate",
-                        className="mr-1",
-                        color="success",
-                        size="sm",
-                        n_clicks=0,
-                    ),
-                    dbc.Button(
-                        "Upload Model Document",
-                        id="button-upload",
-                        className="mr-1",
-                        color="success",
-                        size="sm",
-                        n_clicks=0,
+                    html.Div(
+                        [
+                            dbc.Button(
+                                 "Validate Model Document",
+                                id="button-validate",
+                                className="mr-2",
+                                color="success",
+                                size="sm",
+                                style={'width':'40%'}
+                            ),
+                            dbc.Button(
+                                "Upload Model Document",
+                                id="button-upload",
+                                color="success",
+                                size="sm",
+                                style={'width':'40%'}
+                            ),
+                        ],
+                        className='row',
+                        style={'align-items': 'center', 'justify-content': 'center'}
                     ),
                     html.Hr(),
                     dbc.CardBody("Please submit your model document after validation."),
@@ -335,7 +328,8 @@ upload_model = dbc.Card(
             html.Hr(),
             dbc.Card(
             [
-                html.H5("GUI layout", className="card-title"),
+                #dbc.CardHeader("GUI layout"),
+                html.H5("GUI Layout", className="card-title"),
                 html.Div(id='gui-layout',
                         children=[]
                 ),
@@ -359,12 +353,16 @@ table_models = dbc.Card(
                 color="primary",
                 n_clicks=0,
             ),
-            html.Div([
+            html.Div(
+                children = [
                 dash_table.DataTable(
-                id='table-model-list',
-                columns=([{'id': p, 'name': p} for p in params]),
-                data=model_list,
-                editable=False
+                    id='table-model-list',
+                    columns=([{'id': p, 'name': p} for p in params]),
+                    data=model_list,
+                    editable=False,
+                    style_cell={'padding': '0.5rem', 'textAlign': 'left'},
+                    css=[{"selector": ".show-hide", "rule": "display: none"}],
+                    style_table={'height':'10rem', 'overflowY': 'auto'}
                 ),
             ]),
             #dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True),
@@ -394,6 +392,7 @@ meta = [
             dcc.Store(id="dynamic-json", data=json_file.copy()),
             dcc.Store(id="json-store", data=[]),
             dcc.Store(id="nothing", data=''),
+            dcc.Store(id="nothing2", data=''),
             dcc.Store(id='validation', data=0),
         ],
     ),
@@ -478,12 +477,10 @@ def update_mongodb(name, uri, description):
                 mycollection.update_one({"_id": job_id},{"$set":{"description": description}})
 
 
-@app.callback(
-    [   Output("regist-response0", "children"),
-        Output("regist-response1", "children"),
-        Output("regist-response2", "children"),
-    ], 
-    [   Input("name-regist","value"),
+@app.callback( 
+    Output("nothing2", "data"),
+    [   
+        Input("name-regist","value"),
         Input("uri-regist","value"),
         Input("description-regist","value"),
         Input('subbutton0', 'n_clicks'),
@@ -496,9 +493,9 @@ def update_regist(regist_name, regist_uri, regist_description, sub0,sub1,sub2):
     model_list = list(mycollection.find({}))
     
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    results    = [regist_name, regist_uri, regist_description]
     
     #output messages
+    output = ''
     output1 = 'The model name you are looking for does not exist!'
     output2 = 'Please provide a valid model name!'
     
@@ -507,37 +504,33 @@ def update_regist(regist_name, regist_uri, regist_description, sub0,sub1,sub2):
             job_id, job_uri, job_description, found = ifduplicate(model_list,regist_name)
             if all(v is not None for v in [job_id, job_uri, job_description]):
                 output = 'The model name is already existed! Please use a differnet name!'
-                results = [output for i in range(3)]
             else:
                 update_mongodb(regist_name, regist_uri, regist_description)
         else:
             output = 'Please provide a model name!'
-            results = [output for i in range(3)]
     
     elif 'subbutton1' in changed_id:
         if regist_name != "" and regist_name is not None:
             job_id, job_uri, job_description, found = ifduplicate(model_list, regist_name)
             if not found:
-                results = [output1 for i in range(3)]
+                output = output1
             else:
                 update_mongodb(regist_name, regist_uri, regist_description)
-                results = ['Updating model: ' + str(s) for s in results] 
         else:
-            results = [output2 for i in range(3)]
+            output = output2
         
     elif 'subbutton2' in changed_id:
         if regist_name != "" and regist_name is not None:
             job_id, job_uri, job_description, found = ifduplicate(model_list, regist_name)
             if not found:
-                results = [output1 for i in range(3)]
+                output = output1
             else:
                 mycollection = conn_mongodb()
                 mycollection.delete_one({"model_name": regist_name})
-                results = ['Deleting model: ' + str(s) for s in results]
         else:
-            results = [output2 for i in range(3)]
+            output = output2
             
-    return results
+    return output
 
 
 @app.callback(
