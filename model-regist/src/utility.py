@@ -1,28 +1,11 @@
 import io
-import re
-
-import dash
-import dash_bootstrap_components as dbc
-import dash_html_components as html
-import dash_core_components as dcc
-import dash_table
-from dash.dependencies import Input, Output, State, MATCH, ALL
-
 import pymongo
 import uuid
-
 import urllib.request
 import requests
 import json
-import base64
-
 import jsonschema
 from jsonschema import validate
-
-from targeted_callbacks import targeted_callback
-from kwarg_editor import JSONParameterEditor
-
-import plotly.express as px
 
 
 def model_list_GET_call():
@@ -114,10 +97,5 @@ def update_mongodb(name, uri, description):
             if description != "" and description is not None:
                 mycollection = conn_mongodb()
                 mycollection.update_one({"_id": _id},{"$set":{"description": description}})
-                
-                
-                
-                
-                
-                
-    
+
+

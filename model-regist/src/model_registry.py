@@ -12,15 +12,8 @@ from dash.dependencies import Input, Output, State, MATCH, ALL
 
 import pymongo
 import uuid
-
-import urllib.request
-import requests
 import json
 import base64
-
-import jsonschema
-from jsonschema import validate
-
 
 from utility import conn_mongodb, get_model_list, get_schema, validate_json, ifduplicate, update_mongodb
 from generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
