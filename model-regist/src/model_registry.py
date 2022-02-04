@@ -620,8 +620,13 @@ def update_uploads(upload_content, file_name, file_date):
         data = []
         print(f'upload_content\n{upload_content}')
         upload_content = json.loads(base64.b64decode(upload_content.split(",")[1]))
-        job_id = str(uuid.uuid4())
-        upload_content["_id"] = job_id
+        
+        if '_id' not in upload_content:
+            upload_content["_id"] = str(uuid.uuid4())
+        
+        if 'job_id' not in upload_content: 
+            upload_content["job_id"] = str(uuid.uuid4())
+        
         data.append(upload_content)
         #print(f'data list\n{data}') 
         return data
