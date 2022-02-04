@@ -154,29 +154,27 @@ register_model = dbc.Card(
     children = [
         dbc.CardBody(
         [
-            dbc.Button(
-            "Register New Model",
-            id="subbutton0",
-            className="mr-1",
-            color="success",
-            size="sm",
-            n_clicks=0,
-            ),
-            dbc.Button(
-            "Update Existing Model",
-            id="subbutton1",
-            className="mr-1",
-            color="warning",
-            size="sm",
-            n_clicks=0,
-            ),
-            dbc.Button(
-            "Delete Existing Model",
-            id="subbutton2",
-            className="mr-1",
-            color="danger",
-            size="sm",
-            n_clicks=0,
+             html.Div([
+                dbc.Button(
+                "Register New Model",
+                id="button-register",
+                className="mr-1",
+                color="success",
+                size="sm",
+                n_clicks=0,
+                style={'width':'40%'}
+                ),
+                dbc.Button(
+                "Update Existing Model",
+                id="button-update",
+                className="mr-1",
+                color="warning",
+                size="sm",
+                n_clicks=0,
+                style={'width':'40%'})
+                ],
+                className='row',
+                style={'align-items': 'center', 'justify-content': 'center'}
             ),
             html.Hr(),
             html.Div(
@@ -322,9 +320,18 @@ table_models = dbc.Card(
         dbc.CardBody([
             dbc.Button(
                 "Refresh Model List",
-                id="button2",
-                className="mb-3",
+                id="button-refresh",
+                className="mtb-2",
                 color="primary",
+                size="sm",
+                n_clicks=0,
+            ),
+            dbc.Button(
+                "Delete the Selected",
+                id="button-delete",
+                className="m-2",
+                color="danger",
+                size="sm",
                 n_clicks=0,
             ),
             html.Div(
@@ -354,7 +361,7 @@ meta = [
             dcc.Store(id="dynamic-json", data=FILE_TEMPLATE.copy()),
             dcc.Store(id="json-store", data=[]),
             dcc.Store(id="nothing", data=''),
-            dcc.Store(id="nothing2", data=''),
+            dcc.Store(id="models", data=[]),
             dcc.Store(id='validation', data=0),
         ],
     ),
@@ -379,26 +386,29 @@ app.layout = html.Div (
 #----------------------------------- callback reactives ------------------------------------
 @app.callback(
     Output("table-model-list", "data"),
-    Input("button2", "n_clicks"),
-    Input('subbutton2', 'n_clicks')
+    Input("button-refresh", "n_clicks"),
+    Input('models', 'data')
     )
-def check_models(n1, n2):
-    model_list = get_model_list()
-    if n1 or n2:
-        return model_list
+def refresh_models(n_cliks, data):
+    model_list = data
+    
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'button-refresh' in changed_id:
+        model_list = get_model_list()
+    
     return model_list
 
 
 @app.callback( 
-    Output("nothing2", "data"),
+    Output("models", "data"),
     [   
         Input("name-regist","value"),
         Input("uri-regist","value"),
         Input("description-regist","value"),
         Input('table-model-list', 'selected_rows'),
-        Input('subbutton0', 'n_clicks'),
-        Input('subbutton1', 'n_clicks'),
-        Input('subbutton2', 'n_clicks')
+        Input('button-register', 'n_clicks'),
+        Input('button-update', 'n_clicks'),
+        Input('button-delete', 'n_clicks')
     ],
     )
 def update_regist(regist_name, regist_uri, regist_description, rows, sub0, sub1, sub2):
@@ -409,7 +419,7 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub0, sub1,
     output1 = 'The model name you are looking for does not exist!'
     output2 = 'Please provide a valid model name!'
     
-    if 'subbutton0' in changed_id:
+    if 'button-register' in changed_id:
         if regist_name != "" and regist_name is not None:
             job_id, job_uri, job_description, found = ifduplicate(model_list,regist_name)
             if all(v is not None for v in [job_id, job_uri, job_description]):
@@ -419,7 +429,7 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub0, sub1,
         else:
             output = 'Please provide a model name!'
     
-    if 'subbutton1' in changed_id:
+    if 'button-update' in changed_id:
         if regist_name != "" and regist_name is not None:
             job_id, job_uri, job_description, found = ifduplicate(model_list, regist_name)
             if not found:
@@ -429,7 +439,7 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub0, sub1,
         else:
             output = output2
         
-    if 'subbutton2' in changed_id:
+    if 'button-delete' in changed_id:
         if bool(rows):
             job_ids = [] 
             for row in rows:
@@ -440,7 +450,8 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub0, sub1,
                 mycollection = conn_mongodb() 
                 mycollection.delete_one({"job_id": job_id})
 
-    return output
+    model_list = get_model_list()
+    return model_list
 
 
 @app.callback(
