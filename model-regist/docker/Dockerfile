@@ -22,7 +22,7 @@ RUN apt-get install -y python3-pip\
 COPY docker/requirements.txt requirements.txt
 
 RUN pip3 install --upgrade pip &&\
-    pip3 install --timeout=1000 -r requirements.txt 
+    pip3 install --timeout=5000 -r requirements.txt 
 
 
 WORKDIR /app/model-regist
