@@ -334,6 +334,21 @@ table_models = dbc.Card(
                 size="sm",
                 n_clicks=0,
             ),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader("Warning"),
+                    dbc.ModalBody("Files cannot be recovered after deletion. Do you still want to proceed?"),
+                    dbc.ModalFooter([
+                        dbc.Button(
+                            "Delete", id="confirm-delete", color='danger', outline=False, 
+                            className="ms-auto", n_clicks=0
+                        ),
+                    ]),
+                ],
+                id="modal",
+                is_open=False,
+                style = {'color': 'red'}
+            ), 
             html.Div(
                 children = [
                 dash_table.DataTable(
@@ -399,6 +414,18 @@ def refresh_models(n_cliks, data):
     return model_list
 
 
+@app.callback(
+    Output("modal", "is_open"),
+    Input("button-delete", "n_clicks"),
+    Input("confirm-delete", "n_clicks"),  
+    State("modal", "is_open")
+)
+def toggle_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
+
+
 @app.callback( 
     Output("models", "data"),
     [   
@@ -408,7 +435,7 @@ def refresh_models(n_cliks, data):
         Input('table-model-list', 'selected_rows'),
         Input('button-register', 'n_clicks'),
         Input('button-update', 'n_clicks'),
-        Input('button-delete', 'n_clicks')
+        Input('confirm-delete', 'n_clicks')
     ],
     )
 def update_regist(regist_name, regist_uri, regist_description, rows, sub0, sub1, sub2):
@@ -439,7 +466,7 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub0, sub1,
         else:
             output = output2
         
-    if 'button-delete' in changed_id:
+    if 'confirm-delete' in changed_id:
         if bool(rows):
             content_ids = [] 
             for row in rows:
