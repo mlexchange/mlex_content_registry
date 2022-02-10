@@ -67,14 +67,14 @@ def ifduplicate(dict_list,name_str):
     for i,item in enumerate(dict_list):
         if item["model_name"] == name_str:
             found = True
-            job_id = item["_id"]
+            _id = item["_id"]
             uri    = item["uri"]
             description = item["description"]
             break
     if not found:
         return None, None, None, found
     else:
-        return job_id, uri, description, found 
+        return _id, uri, description, found 
 
 
 def update_mongodb(name, uri, description):
@@ -86,9 +86,9 @@ def update_mongodb(name, uri, description):
         _id, job_uri, job_description, found = ifduplicate(model_list, name)
         if not found:
             _id = str(uuid.uuid4())
-            job_id = str(uuid.uuid4())
+            content_id = str(uuid.uuid4())
             mycollection = conn_mongodb()
-            mycollection.insert_one({"_id": _id, "job_id": job_id, "model_name": name, "uri": uri,"description": description})
+            mycollection.insert_one({"_id": _id, "content_id": content_id, "model_name": name, "uri": uri,"description": description})
             print(f"add new model name: {name}")
         else:
             if uri != "" and uri is not None:

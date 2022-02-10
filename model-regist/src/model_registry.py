@@ -421,8 +421,8 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub0, sub1,
     
     if 'button-register' in changed_id:
         if regist_name != "" and regist_name is not None:
-            job_id, job_uri, job_description, found = ifduplicate(model_list,regist_name)
-            if all(v is not None for v in [job_id, job_uri, job_description]):
+            _id, job_uri, job_description, found = ifduplicate(model_list,regist_name)
+            if all(v is not None for v in [_id, job_uri, job_description]):
                 output = 'The model name is already existed! Please use a differnet name!'
             else:
                 update_mongodb(regist_name, regist_uri, regist_description)
@@ -431,7 +431,7 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub0, sub1,
     
     if 'button-update' in changed_id:
         if regist_name != "" and regist_name is not None:
-            job_id, job_uri, job_description, found = ifduplicate(model_list, regist_name)
+            _id, job_uri, job_description, found = ifduplicate(model_list, regist_name)
             if not found:
                 output = output1
             else:
@@ -441,14 +441,14 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub0, sub1,
         
     if 'button-delete' in changed_id:
         if bool(rows):
-            job_ids = [] 
+            content_ids = [] 
             for row in rows:
-                if 'job_id' in model_list[row]:
-                    job_ids.append(model_list[row]['job_id'])
+                if 'content_id' in model_list[row]:
+                    content_ids.append(model_list[row]['content_id'])
 
-            for job_id in job_ids:
+            for content_id in content_ids:
                 mycollection = conn_mongodb() 
-                mycollection.delete_one({"job_id": job_id})
+                mycollection.delete_one({"content_id": content_id})
 
     model_list = get_model_list()
     return model_list
@@ -624,8 +624,8 @@ def update_uploads(upload_content, file_name, file_date):
         if '_id' not in upload_content:
             upload_content["_id"] = str(uuid.uuid4())
         
-        if 'job_id' not in upload_content: 
-            upload_content["job_id"] = str(uuid.uuid4())
+        if 'content_id' not in upload_content: 
+            upload_content["content_id"] = str(uuid.uuid4())
         
         data.append(upload_content)
         #print(f'data list\n{data}') 
