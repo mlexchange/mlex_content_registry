@@ -12,14 +12,12 @@ from dash.dependencies import Input, Output, State, MATCH, ALL
 
 import pymongo
 import uuid
-
-import urllib.request
-import requests
 import json
 import base64
 
-import jsonschema
-from jsonschema import validate
+from utility import conn_mongodb, get_model_list, get_schema, validate_json, ifduplicate, update_mongodb
+from generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
+                      make_form_bool, make_form_graph
 
 from targeted_callbacks import targeted_callback
 from kwarg_editor import JSONParameterEditor
@@ -27,47 +25,24 @@ from kwarg_editor import JSONParameterEditor
 import plotly.express as px
 
 
-#------------------------------------- helper functions ----------------------------------
-#connecting to mongoDB Atlas
-def conn_mongodb():
-    conn_str = "mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/lbl-mlexchange?retryWrites=true&w=majority"
-    # set a 10-second connection timeout
-    client = pymongo.MongoClient(conn_str, serverSelectionTimeoutMS=100000)
-    db = client['lbl-mlexchange']
-    collection = db['models']
-    return collection
-    
-mycollection = conn_mongodb()
-model_list = list(mycollection.find({}).sort("model_name",pymongo.ASCENDING))
+model_list = get_model_list()
 try:
     print(f"model list:\n{model_list}")
 except Exception:
     print("Unable to connect to the server.")
-    
-
-def get_schema():
-    """
-    This function loads the given schema available
-    """
-    schema = json.load(io.open('data/model_schema.json', 'r', encoding='utf-8-sig'))
-    return schema
 
 
-def validate_json(json_data):
-    """
-    REF: https://json-schema.org/ 
-    """
-    # Describe what kind of json you expect.
-    execute_api_schema = get_schema()
-    try:
-        validate(instance=json_data, schema=execute_api_schema)
-    except jsonschema.exceptions.ValidationError as err:
-        print(f'errr type {type(err)}\n{err}')
-        #err = "Given JSON data is invalid"
-        return False, err
-
-    message = "Given JSON data is valid."
-    return True, message
+FILE_TEMPLATE = {
+  "model_name": "example",
+  "version": "example",
+  "type": "example",
+  "user": "example",
+  "uri": "example",
+  "application": [],
+  "description": "xxx",
+  "gui_parameters": [],
+  "cmd": []
+}
 
 
 external_stylesheets = [dbc.themes.BOOTSTRAP, "../assets/segmentation-style.css",]  # need to use bootstrap themes
@@ -174,35 +149,32 @@ form_regist = dbc.Form(
 )
 
 
-
 register_model = dbc.Card(
     id = "register-model-card",
     children = [
         dbc.CardBody(
         [
-            dbc.Button(
-            "Register New Model",
-            id="subbutton0",
-            className="mr-1",
-            color="success",
-            size="sm",
-            n_clicks=0,
-            ),
-            dbc.Button(
-            "Update Existing Model",
-            id="subbutton1",
-            className="mr-1",
-            color="warning",
-            size="sm",
-            n_clicks=0,
-            ),
-            dbc.Button(
-            "Delete Existing Model",
-            id="subbutton2",
-            className="mr-1",
-            color="danger",
-            size="sm",
-            n_clicks=0,
+             html.Div([
+                dbc.Button(
+                "Register New Model",
+                id="button-register",
+                className="mr-1",
+                color="success",
+                size="sm",
+                n_clicks=0,
+                style={'width':'40%'}
+                ),
+                dbc.Button(
+                "Update Existing Model",
+                id="button-update",
+                className="mr-1",
+                color="warning",
+                size="sm",
+                n_clicks=0,
+                style={'width':'40%'})
+                ],
+                className='row',
+                style={'align-items': 'center', 'justify-content': 'center'}
             ),
             html.Hr(),
             html.Div(
@@ -348,17 +320,42 @@ table_models = dbc.Card(
         dbc.CardBody([
             dbc.Button(
                 "Refresh Model List",
-                id="button2",
-                className="mb-3",
+                id="button-refresh",
+                className="mtb-2",
                 color="primary",
+                size="sm",
                 n_clicks=0,
             ),
+            dbc.Button(
+                "Delete the Selected",
+                id="button-delete",
+                className="m-2",
+                color="danger",
+                size="sm",
+                n_clicks=0,
+            ),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader("Warning"),
+                    dbc.ModalBody("Files cannot be recovered after deletion. Do you still want to proceed?"),
+                    dbc.ModalFooter([
+                        dbc.Button(
+                            "Delete", id="confirm-delete", color='danger', outline=False, 
+                            className="ms-auto", n_clicks=0
+                        ),
+                    ]),
+                ],
+                id="modal",
+                is_open=False,
+                style = {'color': 'red'}
+            ), 
             html.Div(
                 children = [
                 dash_table.DataTable(
                     id='table-model-list',
                     columns=([{'id': p, 'name': p} for p in params]),
                     data=model_list,
+                    row_selectable='multi',
                     editable=False,
                     style_cell={'padding': '0.5rem', 'textAlign': 'left'},
                     css=[{"selector": ".show-hide", "rule": "display: none"}],
@@ -371,28 +368,15 @@ table_models = dbc.Card(
 )
 
 
-json_file = {
-  "model_name": "example",
-  "version": "example",
-  "type": "example",
-  "user": "example",
-  "uri": "example",
-  "application": [],
-  "description": "xxx",
-  "gui_parameters": [],
-  "cmd": []
-}
-
-
 # metadata
 meta = [
     html.Div(
         id="no-display",
         children=[   
-            dcc.Store(id="dynamic-json", data=json_file.copy()),
+            dcc.Store(id="dynamic-json", data=FILE_TEMPLATE.copy()),
             dcc.Store(id="json-store", data=[]),
             dcc.Store(id="nothing", data=''),
-            dcc.Store(id="nothing2", data=''),
+            dcc.Store(id="models", data=[]),
             dcc.Store(id='validation', data=0),
         ],
     ),
@@ -415,103 +399,66 @@ app.layout = html.Div (
 
 
 #----------------------------------- callback reactives ------------------------------------
-def model_list_GET_call():
-    """
-    Get the whole model registry data from the fastapi url.
-    """
-    url = 'http://model-api:8000/api/v0/model-list'
-    #url = 'http://localhost:8000/api/v0/model-list'
-    response = urllib.request.urlopen(url)
-    data = json.loads(response.read())
-    return data
+@app.callback(
+    Output("table-model-list", "data"),
+    Input("button-refresh", "n_clicks"),
+    Input('models', 'data')
+    )
+def refresh_models(n_cliks, data):
+    model_list = data
+    
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'button-refresh' in changed_id:
+        model_list = get_model_list()
+    
+    return model_list
 
 
 @app.callback(
-    Output("table-model-list", "data"),
-    Input("button2", "n_clicks"),
-    )
-def check_models(n):
-    data = model_list_GET_call()
-    if n:
-        return data
-    return data
-
-
-def ifduplicate(dict_list,name_str):
-    """
-    Check if the new model description is already existed on the mongodb.
-    """
-    found = False
-    for i,item in enumerate(dict_list):
-        if item["model_name"] == name_str:
-            found = True
-            job_id = item["_id"]
-            uri    = item["uri"]
-            description = item["description"]
-            break
-    if not found:
-        return None, None, None, found
-    else:
-        return job_id, uri, description, found 
-
-
-def update_mongodb(name, uri, description):
-    """
-    Update model registry by model_name, uri, and description.
-    """
-    mycollection = conn_mongodb()
-    model_list = list(mycollection.find({}))
-    if name != "" and name is not None:
-        job_id, job_uri, job_description, found = ifduplicate(model_list, name)
-        if not found:
-            job_id = str(uuid.uuid4())
-            mycollection = conn_mongodb()
-            mycollection.insert_one({"_id": job_id, "model_name": name, "uri": uri,"description": description})
-            print(f"add new model name: {name}")
-        else:
-            if uri != "" and uri is not None:
-                mycollection = conn_mongodb()
-                mycollection.update_one({"_id": job_id},{"$set":{"uri": uri}})
-            if description != "" and description is not None:
-                mycollection = conn_mongodb()
-                mycollection.update_one({"_id": job_id},{"$set":{"description": description}})
+    Output("modal", "is_open"),
+    Input("button-delete", "n_clicks"),
+    Input("confirm-delete", "n_clicks"),  
+    State("modal", "is_open")
+)
+def toggle_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
 
 
 @app.callback( 
-    Output("nothing2", "data"),
+    Output("models", "data"),
     [   
         Input("name-regist","value"),
         Input("uri-regist","value"),
         Input("description-regist","value"),
-        Input('subbutton0', 'n_clicks'),
-        Input('subbutton1', 'n_clicks'),
-        Input('subbutton2', 'n_clicks')
+        Input('table-model-list', 'selected_rows'),
+        Input('button-register', 'n_clicks'),
+        Input('button-update', 'n_clicks'),
+        Input('confirm-delete', 'n_clicks')
     ],
     )
-def update_regist(regist_name, regist_uri, regist_description, sub0,sub1,sub2):
-    mycollection = conn_mongodb()
-    model_list = list(mycollection.find({}))
-    
+def update_regist(regist_name, regist_uri, regist_description, rows, sub0, sub1, sub2):
+    model_list = get_model_list()
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    
     #output messages
     output = ''
     output1 = 'The model name you are looking for does not exist!'
     output2 = 'Please provide a valid model name!'
     
-    if 'subbutton0' in changed_id:
+    if 'button-register' in changed_id:
         if regist_name != "" and regist_name is not None:
-            job_id, job_uri, job_description, found = ifduplicate(model_list,regist_name)
-            if all(v is not None for v in [job_id, job_uri, job_description]):
+            _id, job_uri, job_description, found = ifduplicate(model_list,regist_name)
+            if all(v is not None for v in [_id, job_uri, job_description]):
                 output = 'The model name is already existed! Please use a differnet name!'
             else:
                 update_mongodb(regist_name, regist_uri, regist_description)
         else:
             output = 'Please provide a model name!'
     
-    elif 'subbutton1' in changed_id:
+    if 'button-update' in changed_id:
         if regist_name != "" and regist_name is not None:
-            job_id, job_uri, job_description, found = ifduplicate(model_list, regist_name)
+            _id, job_uri, job_description, found = ifduplicate(model_list, regist_name)
             if not found:
                 output = output1
             else:
@@ -519,18 +466,19 @@ def update_regist(regist_name, regist_uri, regist_description, sub0,sub1,sub2):
         else:
             output = output2
         
-    elif 'subbutton2' in changed_id:
-        if regist_name != "" and regist_name is not None:
-            job_id, job_uri, job_description, found = ifduplicate(model_list, regist_name)
-            if not found:
-                output = output1
-            else:
-                mycollection = conn_mongodb()
-                mycollection.delete_one({"model_name": regist_name})
-        else:
-            output = output2
-            
-    return output
+    if 'confirm-delete' in changed_id:
+        if bool(rows):
+            content_ids = [] 
+            for row in rows:
+                if 'content_id' in model_list[row]:
+                    content_ids.append(model_list[row]['content_id'])
+
+            for content_id in content_ids:
+                mycollection = conn_mongodb() 
+                mycollection.delete_one({"content_id": content_id})
+
+    model_list = get_model_list()
+    return model_list
 
 
 @app.callback(
@@ -579,84 +527,7 @@ def display_component(n_clicks, children):
     return children
 
 
-#-------------------------------------- dynamic JSON generator ---------------------------
-def make_form_input(i):
-    form_input = dbc.Form(
-        [
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="unique id"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},   type="text", placeholder="parameter name (key)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="text", placeholder="default value"),
-        ]
-    )
-    return form_input
 
-def make_form_slider(i):
-    form_slider = dbc.Form(
-        [
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="unique id"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},   type="text", placeholder="parameter name (key)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "min"},   type="number", placeholder="min"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "max"},   type="number", placeholder="max"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "step"},  type="number", placeholder="step"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="number", placeholder="default value"),
-            dbc.Label("Input marks following: value1, label1, value2, label2..."),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "marks"}, type="text", placeholder="marks"),
-        ]
-    )
-    return form_slider
-
-
-def make_form_dropdown(i):    
-    form_dropdown = dbc.Form(
-        [
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},   type="text", placeholder="unique id"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"},  type="text", placeholder="title"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},    type="text", placeholder="parameter name (key)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"},  type="text", placeholder="default value"),
-            dbc.Label("Input options following: label1, value1, label2, value2..."),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "options"},type="text", placeholder="options"),
-        ]
-    )
-    return form_dropdown
-
-
-def make_form_radio(i):
-    form_radio = dbc.Form(
-        [
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},    type="text", placeholder="unique id"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"},   type="text", placeholder="title"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},     type="text", placeholder="parameter name (key)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"},   type="text", placeholder="default value"),
-            dbc.Label("Input options following: label1, value1, label2, value2..."),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "options"}, type="text", placeholder="options"),
-        ]
-    )
-    return form_radio
-
-
-def make_form_bool(i):
-    form_bool = dbc.Form(
-        [
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="unique id"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},   type="text", placeholder="parameter name (key)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="text", placeholder="default value"),
-        ]
-    )
-    return form_bool
-
-
-def make_form_graph(i):
-    form_graph = dbc.Form(
-        [
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="unique id"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},   type="text", placeholder="parameter name (key)"),
-        ]
-    )
-    return form_graph
 
 
 @app.callback(
@@ -707,7 +578,7 @@ def json_generator(component_type, name, version, model_type, user, uri, referen
     items = [name, version, model_type, user, uri, reference, description]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     #print(f'gui container children\n{children}')
-    json_document = json_file.copy()  # shallow copy
+    json_document = FILE_TEMPLATE.copy()  # shallow copy
     json_document["gui_parameters"] = []  # set the gui parameter list to empty
     if 'generate-json' in changed_id or 'gui-check' in changed_id:
         for item,key in zip(items,keys):
@@ -776,8 +647,13 @@ def update_uploads(upload_content, file_name, file_date):
         data = []
         print(f'upload_content\n{upload_content}')
         upload_content = json.loads(base64.b64decode(upload_content.split(",")[1]))
-        job_id = str(uuid.uuid4())
-        upload_content["_id"] = job_id
+        
+        if '_id' not in upload_content:
+            upload_content["_id"] = str(uuid.uuid4())
+        
+        if 'content_id' not in upload_content: 
+            upload_content["content_id"] = str(uuid.uuid4())
+        
         data.append(upload_content)
         #print(f'data list\n{data}') 
         return data
