@@ -25,8 +25,8 @@ RUN pip3 install --upgrade pip &&\
     pip3 install --timeout=5000 -r requirements.txt 
 
 
-WORKDIR /app/model-content
-ENV HOME /app/model-content
+WORKDIR /app/content-regist
+ENV HOME /app/content-regist
 COPY src src
 ENV PYTHONUNBUFFERED=1
 

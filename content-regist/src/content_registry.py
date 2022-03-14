@@ -154,48 +154,69 @@ register_model = dbc.Card(
     children = [
         dbc.CardBody(
         [
-             html.Div([
-                dbc.Button(
-                "Register New Content",
-                id="button-register",
-                className="mr-1",
-                color="success",
-                size="sm",
-                n_clicks=0,
-                style={'width':'40%'}
-                ),
-                dbc.Button(
-                "Update Existing Content",
-                id="button-update",
-                className="mr-1",
-                color="warning",
-                size="sm",
-                n_clicks=0,
-                style={'width':'40%'})
-                ],
-                className='row',
-                style={'align-items': 'center', 'justify-content': 'center'}
-            ),
-            html.Hr(),
-            html.Div(
-                [
+            html.Div([
+                html.Div([
                     dbc.Button(
-                        "Generate Content Document",
-                        id="generate-json",
-                        className="mr-2",
-                        color="success",
-                        size="sm",
-                        style={'width':'40%'}
+                    "Register New Content",
+                    id="button-register",
+                    className="mr-1",
+                    color="success",
+                    size="sm",
+                    n_clicks=0,
+                    style={'width':'40%'}
                     ),
-                    html.Div([
-                        html.Button("Download Content Document", id="btn-download-txt"),
-                        dcc.Download(id="download-text")
-                    ]),
-                ],
-                className='row',
-                style={'align-items': 'center', 'justify-content': 'center'}
+                    dbc.Button(
+                    "Update Existing Content",
+                    id="button-update",
+                    className="mr-1",
+                    color="warning",
+                    size="sm",
+                    n_clicks=0,
+                    style={'width':'40%'})
+                    ],
+                    className='row',
+                    style={'align-items': 'center', 'justify-content': 'center'}
+                ),
+                html.Hr(),
+                html.Div(
+                    [
+                        dbc.Button(
+                            "Generate Content Document",
+                            id="generate-json",
+                            className="mr-2",
+                            color="success",
+                            size="sm",
+                            style={'width':'40%'}
+                        ),
+                        html.Div([
+                            html.Button("Download Content Document", id="btn-download-txt"),
+                            dcc.Download(id="download-text")
+                        ]),
+                    ],
+                    className='row',
+                    style={'align-items': 'center', 'justify-content': 'center', 'margin-bottom': '20px'}
+                ),
+                html.Div(
+                    [
+                        dbc.RadioItems(
+                            id="tab-group",
+                            className="btn-group",
+                            inputClassName="btn-check",
+                            labelClassName="btn btn-outline-primary",
+                            labelCheckedClassName="active",
+                            labelStyle={'font-size': '15px', 'width': '100px', 'margin':'10px'},
+                            options=[
+                                {"label": "Model", "value": "model"},
+                                {"label": "App", "value": "app"},
+                                {"label": "Workflow", "value": "workflow"},
+                            ],
+                            value="model")
+                    ],
+                    className="radio-group",
+                    style ={'margin-bottom': '10px'},
+                )],
+                style={'align-items': 'center', 'justify-content': 'center', 'margin-bottom': '20px'},   
             ),
-            html.Hr(),
             form_regist,
             dbc.Card(
             [
