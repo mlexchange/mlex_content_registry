@@ -1,14 +1,18 @@
+import configparser
+import pymongo
+
 from typing import Optional
 from fastapi import FastAPI
 
-import pymongo
-
-MONGO_DB_URI = "mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/lbl-mlexchange?retryWrites=true&w=majority"
+config = configparser.ConfigParser()
+config.read('config.ini')
+MONGO_DB_URI = config['content database']['MONGO DB URI']
+print(f'MONGO_DB_URI {MONGO_DB_URI}')
 
 #connecting to mongoDB Atlas
 def conn_mongodb():
     # set a 10-second connection timeout
-    client = pymongo.MongoClient(MONGO_DB_URI, serverSelectionTimeoutMS=100000)
+    client = pymongo.MongoClient('mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/lbl-mlexchange?retryWrites=true&w=majority', serverSelectionTimeoutMS=100000)
     db = client['lbl-mlexchange']
     collection = db['models']
     return collection
@@ -30,7 +34,7 @@ app = FastAPI(  openapi_url ="/api/lbl-mlexchange/openapi.json",
              )
 
 
-@app.get(API_URL_PREFIX+"/model-list")
+@app.get(API_URL_PREFIX+"/models")
 async def get_model_list():
     mycollection = conn_mongodb()
     model_list = list(mycollection.find({}).sort("model_name",pymongo.ASCENDING))
