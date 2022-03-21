@@ -1,4 +1,4 @@
-model-api/src/__pycache__/*
-model-regist/src/__pycache__/*
+content-api/src/__pycache__/*
+content-regist/src/__pycache__/*
 .DS_Store
-model-regist/src/kwarg_editor_copy.py
+content-regist/src/kwarg_editor_copy.py
