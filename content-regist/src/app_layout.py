@@ -240,7 +240,7 @@ register_model = dbc.Card(
                 ],
                 style={'align-items': 'center', 'justify-content': 'center', 'margin-bottom': '20px'},   
             ),
-            #html.Div(id='tab-display', children=MODEL_REGISTRY)
+            html.Div(id='tab-display', children=MODEL_REGISTRY)
         ],
         ),
     ]
@@ -276,7 +276,7 @@ upload_model = dbc.Card(
                         style={'align-items': 'center', 'justify-content': 'center'}
                     ),
                     html.Hr(),
-                    dbc.CardBody("Please submit your content document after validation."),
+                    dbc.CardBody("Please upload your content document after validation."),
                     html.Div(id='output-json-validation'),
                     dbc.Card(
                         [
@@ -297,7 +297,7 @@ upload_model = dbc.Card(
                                                 'textAlign': 'center',
                                                 'margin': '10px'
                                             },
-                                            # Allow multiple files to be uploaded
+                                            # Not allow multiple files to be uploaded
                                             multiple=False,
                                         ),
                                         html.Div(id='output-data-upload'),
@@ -382,7 +382,7 @@ meta = [
         id="no-display",
         children=[   
             dcc.Store(id="dynamic-json", data=FILE_TEMPLATE.copy()),
-            dcc.Store(id="json-store", data=[]),
+            dcc.Store(id="json-store", data={}),
             dcc.Store(id="nothing", data=''),
             dcc.Store(id="models", data=[]),
             dcc.Store(id='validation', data=0),

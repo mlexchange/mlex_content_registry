@@ -53,13 +53,13 @@ def toggle_modal(n1, n2, is_open):
 
 
 # might need collapse to handle id not found issues
-# @app.callback( 
-#     Output("tab-display", "children"),
-#     Input("tab-group","value")
-#     )
-# def update_layout(tab_value):
-#     if tab_value == 'model':
-#         return MODEL_REGISTRY
+@app.callback( 
+    Output("tab-display", "children"),
+    Input("tab-group","value")
+    )
+def update_layout(tab_value):
+    if tab_value == 'model':
+        return MODEL_REGISTRY
 
 
 @app.callback( 
@@ -115,38 +115,6 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub1, sub2)
 
     model_list = get_model_list()
     return model_list
-
-
-@app.callback(
-    Output("nothing", "data"),
-    Input('button-register', 'n_clicks'),
-    Input("button-upload", "n_clicks"),
-    Input('validation', 'data'),
-    State("json-store", "data"),
-    State("dynamic-json", "data"),
-    )
-def update_models_from_uploads(n1, n2, is_valid, upload_data, json_document):
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    valid = True
-    if 'button-upload.n_clicks' in changed_id:
-        data = upload_dat
-        valid = is_valid
-    elif 'button-register.n_clicks' in changed_id:
-        data = json_document
-        print(f'Direct json_document {json_document}')
-    else:
-        data = {}
-    
-    if bool(data) and valid:
-        #print(f'return data\n{data}')
-        mycollection = conn_mongodb()
-        if isinstance(data, list):
-            if len(data) == 1:
-                mycollection.insert_one(data[0])
-            else:
-                mycollection.insert_many(data)  
-        else:
-            mycollection.insert_one(data)
 
 
 @app.callback(
@@ -219,7 +187,7 @@ def display_output(value, n_cliks):
     prevent_initial_call=True
     )
 def json_generator(content_type, component_type, name, version, model_type, user, uri, \
-                   reference, description, applications, cmds, children, n, n_clicks):
+                   reference, description, applications, cmds, children, n1, n2):
     keys = ["model_name","version","type","user","uri","reference", "description"]
     items = [name, version, model_type, user, uri, reference, description]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
@@ -227,12 +195,16 @@ def json_generator(content_type, component_type, name, version, model_type, user
     
     json_document = FILE_TEMPLATE.copy()  # shallow copy
     json_document["gui_parameters"] = []  # set the gui parameter list to empty
+    json_document["_id"] = str(uuid.uuid4())
+    json_document["content_id"] = str(uuid.uuid4())
+    
     if content_type == 'app':
         json_document['content_type'] = 'app'
     elif content_type == 'workflow':
         json_document['content_type'] = 'workflow'
     
-    if 'generate-json' in changed_id or 'gui-check' in changed_id:
+    if 'generate-json' in changed_id or \
+       'gui-check' in changed_id:
         for item,key in zip(items,keys):
             if bool(item):
                 json_document[key] = item
@@ -281,10 +253,45 @@ def json_generator(content_type, component_type, name, version, model_type, user
                         print('No value is found in the input form yet')
                 json_document["gui_parameters"].append(component_combo)
         else:
-            print('No gui component is added!')
+            if json_document['content_type'] == 'model':
+                print('No gui component is added!')
 
     print(f'Return json_document {json_document}')
     return json_document
+
+
+
+@app.callback(
+    Output("nothing", "data"),
+    Input('button-register', 'n_clicks'),
+    Input("button-upload", "n_clicks"),
+    Input('validation', 'data'),
+    State("dynamic-json", "data"),
+    State("json-store", "data"),
+    )
+def add_new_content(n1, n2, is_valid, json_document, upload_data):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    valid = True
+    if 'button-upload.n_clicks' in changed_id:
+        data = upload_data
+        valid = is_valid
+    elif 'button-register.n_clicks' in changed_id:
+        data = json_document
+        print(f'Direct json_document {json_document}')
+    else:
+        data = {}
+    
+    if bool(data) and valid:
+        #print(f'return data\n{data}')
+        mycollection = conn_mongodb()
+        mycollection.insert_one(data)
+#         if isinstance(data, list):
+#             if len(data) == 1:
+#                 mycollection.insert_one(data[0])
+#             else:
+#                 mycollection.insert_many(data)  
+#         else:
+#             mycollection.insert_one(data)
 
 
 # cannot upload duplicate file consecutively, I guess this makes sense
@@ -295,23 +302,13 @@ def json_generator(content_type, component_type, name, version, model_type, user
        State('upload-data', 'last_modified')
     )
 def update_uploads(upload_content, file_name, file_date):
+    content = {}
     if upload_content is not None:
-        #print(list_of_contents)
-        data = []
-        print(f'upload_content\n{upload_content}')
-        upload_content = json.loads(base64.b64decode(upload_content.split(",")[1]))
-        
-        if '_id' not in upload_content:
-            upload_content["_id"] = str(uuid.uuid4())
-        
-        if 'content_id' not in upload_content: 
-            upload_content["content_id"] = str(uuid.uuid4())
-        
-        data.append(upload_content)
-        #print(f'data list\n{data}') 
-        return data
-    else:
-        return []
+        content = json.loads(base64.b64decode(upload_content.split(",")[1]))
+        content["_id"] = str(uuid.uuid4()) 
+        content["content_id"] = str(uuid.uuid4())
+
+    return content
 
 
 @app.callback(
@@ -328,7 +325,7 @@ def validate_json_schema(n, data):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-validate' in changed_id:
         if bool(data):
-            is_valid, msg = validate_json(data[0])
+            is_valid, msg = validate_json(data)
             return [str(msg),is_valid]
         else:
             return ["", False]
@@ -369,10 +366,10 @@ def show_gui_layouts(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-validate' in changed_id:
         if bool(data):
-            is_valid, msg = validate_json(data[0])
+            is_valid, msg = validate_json(data)
             if is_valid:
                 item_list = JSONParameterEditor(_id={'type': 'parameter_editor'},   # pattern match _id (base id), name
-                                                json_blob=data[0]["gui_parameters"],
+                                                json_blob=data["gui_parameters"],
                                             )
                 item_list.init_callbacks(app)
                 return [item_list]
