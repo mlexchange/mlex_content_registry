@@ -12,7 +12,7 @@ print(f'MONGO_DB_URI {MONGO_DB_URI}')
 #connecting to mongoDB Atlas
 def conn_mongodb():
     # set a 10-second connection timeout
-    client = pymongo.MongoClient('mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/lbl-mlexchange?retryWrites=true&w=majority', serverSelectionTimeoutMS=100000)
+    client = pymongo.MongoClient(srvServiceName=MONGO_DB_URI, serverSelectionTimeoutMS=100000)
     db = client['lbl-mlexchange']
     collection = db['models']
     return collection

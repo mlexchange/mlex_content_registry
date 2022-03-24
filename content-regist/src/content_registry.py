@@ -60,6 +60,10 @@ def toggle_modal(n1, n2, is_open):
 def update_layout(tab_value):
     if tab_value == 'model':
         return MODEL_REGISTRY
+    elif tab_value == 'app':
+        return MODEL_REGISTRY
+    elif tab_value == 'workflow':
+        return MODEL_REGISTRY
 
 
 @app.callback( 
