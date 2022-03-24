@@ -381,8 +381,7 @@ meta = [
     html.Div(
         id="no-display",
         children=[   
-            dcc.Store(id="dynamic-json", data=FILE_TEMPLATE.copy()),
-            dcc.Store(id="json-store", data={}),
+            dcc.Store(id="json-store", data=FILE_TEMPLATE.copy()),
             dcc.Store(id="nothing", data=''),
             dcc.Store(id="models", data=[]),
             dcc.Store(id='validation', data=0),

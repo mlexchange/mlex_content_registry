@@ -168,7 +168,7 @@ def display_output(value, n_cliks):
 
 
 @app.callback(
-    Output("dynamic-json", "data"),
+    Output("json-store", "data"),
     Input("tab-group","value"),
     Input({'type': 'dynamic-dropdown', 'index': ALL}, 'value'),
     Input("name-regist", "value"),
@@ -183,11 +183,15 @@ def display_output(value, n_cliks):
     Input('dynamic-gui-container', 'children'),
     Input("generate-json", "n_clicks"),
     Input("gui-check", "n_clicks"),
+    Input('upload-data', 'contents'),
+    State('upload-data', 'filename'),
+    State('upload-data', 'last_modified'),
 
     prevent_initial_call=True
     )
 def json_generator(content_type, component_type, name, version, model_type, user, uri, \
-                   reference, description, applications, cmds, children, n1, n2):
+                   reference, description, applications, cmds, children, n1, n2, \
+                   upload_content, file_name, file_date):
     keys = ["model_name","version","type","user","uri","reference", "description"]
     items = [name, version, model_type, user, uri, reference, description]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
@@ -256,59 +260,35 @@ def json_generator(content_type, component_type, name, version, model_type, user
             if json_document['content_type'] == 'model':
                 print('No gui component is added!')
 
+    if 'upload-data' in changed_id:
+        json_document = {}
+        if upload_content is not None:
+            json_document = json.loads(base64.b64decode(upload_content.split(",")[1]))
+            json_document["_id"] = str(uuid.uuid4()) 
+            json_document["content_id"] = str(uuid.uuid4())
+    
     print(f'Return json_document {json_document}')
     return json_document
-
 
 
 @app.callback(
     Output("nothing", "data"),
     Input('button-register', 'n_clicks'),
-    Input("button-upload", "n_clicks"),
-    Input('validation', 'data'),
-    State("dynamic-json", "data"),
+    Input('button-upload', 'n_clicks'),
+    State('validation', 'data'),
     State("json-store", "data"),
     )
-def add_new_content(n1, n2, is_valid, json_document, upload_data):
+def add_new_content(n1, n2, is_valid, json_document):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    valid = True
     if 'button-upload.n_clicks' in changed_id:
-        data = upload_data
-        valid = is_valid
-    elif 'button-register.n_clicks' in changed_id:
-        data = json_document
-        print(f'Direct json_document {json_document}')
-    else:
-        data = {}
-    
-    if bool(data) and valid:
-        #print(f'return data\n{data}')
-        mycollection = conn_mongodb()
-        mycollection.insert_one(data)
-#         if isinstance(data, list):
-#             if len(data) == 1:
-#                 mycollection.insert_one(data[0])
-#             else:
-#                 mycollection.insert_many(data)  
-#         else:
-#             mycollection.insert_one(data)
+        if bool(json_document) and is_valid:
+            mycollection = conn_mongodb()
+            mycollection.insert_one(json_document)
 
-
-# cannot upload duplicate file consecutively, I guess this makes sense
-@app.callback(
-       Output('json-store', 'data'),
-       Input('upload-data', 'contents'),
-       State('upload-data', 'filename'),
-       State('upload-data', 'last_modified')
-    )
-def update_uploads(upload_content, file_name, file_date):
-    content = {}
-    if upload_content is not None:
-        content = json.loads(base64.b64decode(upload_content.split(",")[1]))
-        content["_id"] = str(uuid.uuid4()) 
-        content["content_id"] = str(uuid.uuid4())
-
-    return content
+    if 'button-register.n_clicks' in changed_id:
+        if bool(json_document):
+            mycollection = conn_mongodb()
+            mycollection.insert_one(json_document)
 
 
 @app.callback(
@@ -338,7 +318,7 @@ def show_dynamic_gui_layouts(n_clicks):
     """
     Show GUI components with inputs from the dynamic GUI generator.
     """
-    data = dash.callback_context.states["dynamic-json.data"]
+    data = dash.callback_context.states["json-store.data"]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'gui-check' in changed_id:
         if bool(data):
@@ -357,7 +337,7 @@ targeted_callback(
     show_dynamic_gui_layouts,
     Input("gui-check", "n_clicks"),
     Output("gui-layout", "children"),
-    State("dynamic-json", "data"),
+    State("json-store", "data"),
     app=app)
 
 
@@ -391,7 +371,7 @@ targeted_callback(
 @app.callback(
     Output("download-text", "data"),
     Input("btn-download-txt", "n_clicks"),
-    State("dynamic-json", "data"),
+    State("json-store", "data"),
     prevent_initial_call=True,
 )
 def download_model(n_clicks, data):
