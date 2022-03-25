@@ -6,10 +6,10 @@ import dash_html_components as html
 import dash_core_components as dcc
 import dash_table
 
-from utility import get_model_list
+from utility import get_content_list
 
 
-model_list = get_model_list()
+model_list = get_content_list()
 try:
     print(f"model list:\n{model_list}")
 except Exception:
@@ -383,7 +383,7 @@ meta = [
         children=[   
             dcc.Store(id="json-store", data=FILE_TEMPLATE.copy()),
             dcc.Store(id="nothing", data=''),
-            dcc.Store(id="models", data=[]),
+            dcc.Store(id="table-contents-cache", data=[]),
             dcc.Store(id='validation', data=0),
         ],
     ),

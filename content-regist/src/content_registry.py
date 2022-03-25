@@ -14,7 +14,7 @@ import uuid
 import json
 import base64
 
-from utility import conn_mongodb, get_model_list, get_schema, validate_json, ifduplicate, update_mongodb
+from utility import conn_mongodb, get_content_list, get_schema, validate_json, ifduplicate, update_mongodb
 from generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
                       make_form_bool, make_form_graph
 
@@ -27,15 +27,15 @@ from app_layout import app, FILE_TEMPLATE, MODEL_REGISTRY
 #----------------------------------- callback reactives ------------------------------------
 @app.callback(
     Output("table-model-list", "data"),
+    Input("table-contents-cache", "data"),  # automatically refresh table after delete, not after upload though
     Input("button-refresh", "n_clicks"),
-    Input('models', 'data')
+    Input("tab-group","value"),
     )
-def refresh_models(n_cliks, data):
-    model_list = data
-    
+def refresh_table(data, n_cliks, tab_value):
+    model_list = get_content_list(tab_value+'s')
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-refresh' in changed_id:
-        model_list = get_model_list()
+        model_list = get_content_list(tab_value+'s')
     
     return model_list
 
@@ -67,19 +67,18 @@ def update_layout(tab_value):
 
 
 @app.callback( 
-    Output("models", "data"),
-    [   
-        Input("name-regist","value"),
-        Input("uri-regist","value"),
-        Input("description-regist","value"),
-        Input('table-model-list', 'selected_rows'),
-        #Input('button-register', 'n_clicks'),
-        Input('button-update', 'n_clicks'),
-        Input('confirm-delete', 'n_clicks')
-    ],
+    Output("table-contents-cache", "data"),
+    Input("name-regist","value"),
+    Input("uri-regist","value"),
+    Input("description-regist","value"),
+    Input('table-model-list', 'selected_rows'),
+    #Input('button-register', 'n_clicks'),
+    Input('button-update', 'n_clicks'),
+    Input('confirm-delete', 'n_clicks'),
+    State("tab-group","value")
     )
-def update_regist(regist_name, regist_uri, regist_description, rows, sub1, sub2):
-    model_list = get_model_list()
+def update_regist(regist_name, regist_uri, regist_description, rows, sub1, sub2, tab_value):
+    model_list = get_content_list('models')
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     #output messages
     output = ''
@@ -114,10 +113,10 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub1, sub2)
                     content_ids.append(model_list[row]['content_id'])
 
             for content_id in content_ids:
-                mycollection = conn_mongodb() 
+                mycollection = conn_mongodb(tab_value+'s') 
                 mycollection.delete_one({"content_id": content_id})
 
-    model_list = get_model_list()
+    model_list = get_content_list('models')
     return model_list
 
 
@@ -281,35 +280,33 @@ def json_generator(content_type, component_type, name, version, model_type, user
     Input('button-upload', 'n_clicks'),
     State('validation', 'data'),
     State("json-store", "data"),
-    )
-def add_new_content(n1, n2, is_valid, json_document):
+    State("tab-group","value")
+)
+def add_new_content(n1, n2, is_valid, json_document, tab_value):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-upload.n_clicks' in changed_id:
         if bool(json_document) and is_valid:
-            mycollection = conn_mongodb()
+            mycollection = conn_mongodb(tab_value+'s')
             mycollection.insert_one(json_document)
 
     if 'button-register.n_clicks' in changed_id:
         if bool(json_document):
-            mycollection = conn_mongodb()
+            mycollection = conn_mongodb(tab_value+'s')
             mycollection.insert_one(json_document)
 
 
 @app.callback(
-        [
-            Output('output-json-validation', 'children'),
-            Output('validation', 'data'),
-        ],
-        [
-            Input("button-validate", "n_clicks"),
-            State('json-store', 'data'),
-        ]
-        )
-def validate_json_schema(n, data):
+    Output('output-json-validation', 'children'),
+    Output('validation', 'data'),
+    Input("button-validate", "n_clicks"),
+    State('json-store', 'data'),
+    State("tab-group","value")
+)
+def validate_json_schema(n, data, tab_value):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-validate' in changed_id:
         if bool(data):
-            is_valid, msg = validate_json(data)
+            is_valid, msg = validate_json(data, tab_value)
             return [str(msg),is_valid]
         else:
             return ["", False]
@@ -347,10 +344,11 @@ targeted_callback(
 
 def show_gui_layouts(n_clicks):
     data = dash.callback_context.states["json-store.data"]
+    type = dash.callback_context.states["tab-group.value"]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-validate' in changed_id:
         if bool(data):
-            is_valid, msg = validate_json(data)
+            is_valid, msg = validate_json(data, type)
             if is_valid:
                 item_list = JSONParameterEditor(_id={'type': 'parameter_editor'},   # pattern match _id (base id), name
                                                 json_blob=data["gui_parameters"],
@@ -369,6 +367,7 @@ targeted_callback(
     Input("button-validate", "n_clicks"),
     Output("gui-layout", "children"),
     State("json-store", "data"),
+    State("tab-group", "value"),
     app=app)
 
 
