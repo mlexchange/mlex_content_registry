@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/product.schema.json",
   "title": "model description schema",
-  "description": "A schema for defining models to store at MLExchange model registry",
+  "description": "A schema for defining models to store at MLExchange content registry",
   "type": "object",
   "properties": {
     "model_name": {
