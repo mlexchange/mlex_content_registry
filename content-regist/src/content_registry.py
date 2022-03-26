@@ -14,7 +14,7 @@ import uuid
 import json
 import base64
 
-from utility import conn_mongodb, get_content_list, get_schema, validate_json, ifduplicate, update_mongodb
+from utility import conn_mongodb, get_content_list, get_schema, validate_json, is_duplicate, update_mongodb
 from generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
                       make_form_bool, make_form_graph
 
@@ -78,7 +78,7 @@ def update_layout(tab_value):
     State("tab-group","value")
     )
 def update_regist(regist_name, regist_uri, regist_description, rows, sub1, sub2, tab_value):
-    model_list = get_content_list('models')
+    content_list = get_content_list(tab_value+'s')
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     #output messages
     output = ''
@@ -87,7 +87,7 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub1, sub2,
     
 #     if 'button-register' in changed_id:
 #         if regist_name != "" and regist_name is not None:
-#             _id, job_uri, job_description, found = ifduplicate(model_list,regist_name)
+#             _id, job_uri, job_description, found = is_duplicate(model_list,regist_name)
 #             if all(v is not None for v in [_id, job_uri, job_description]):
 #                 output = 'The model name is already existed! Please use a differnet name!'
 #             else:
@@ -97,7 +97,7 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub1, sub2,
     
     if 'button-update' in changed_id:
         if regist_name != "" and regist_name is not None:
-            _id, job_uri, job_description, found = ifduplicate(model_list, regist_name)
+            _id, job_uri, job_description, found = is_duplicate(content_list, regist_name)
             if not found:
                 output = output1
             else:
@@ -109,15 +109,14 @@ def update_regist(regist_name, regist_uri, regist_description, rows, sub1, sub2,
         if bool(rows):
             content_ids = [] 
             for row in rows:
-                if 'content_id' in model_list[row]:
-                    content_ids.append(model_list[row]['content_id'])
+                if 'content_id' in content_list[row]:
+                    content_ids.append(content_list[row]['content_id'])
 
             for content_id in content_ids:
                 mycollection = conn_mongodb(tab_value+'s') 
                 mycollection.delete_one({"content_id": content_id})
 
-    model_list = get_content_list('models')
-    return model_list
+    return get_content_list(tab_value+'s')
 
 
 @app.callback(

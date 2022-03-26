@@ -65,7 +65,7 @@ def validate_json(json_data, type):
     return True, message
     
     
-def ifduplicate(dict_list,name_str):
+def is_duplicate(dict_list,name_str):
     """
     Check if the new model description is already existed on the mongodb.
     """
@@ -89,7 +89,7 @@ def update_mongodb(name, uri, description):
     """
     model_list = get_content_list('models')
     if name != "" and name is not None:
-        _id, job_uri, job_description, found = ifduplicate(model_list, name)
+        _id, job_uri, job_description, found = is_duplicate(model_list, name)
         if not found:
             _id = str(uuid.uuid4())
             content_id = str(uuid.uuid4())
