@@ -298,14 +298,13 @@ def add_new_content(n1, n2, is_valid, json_document, tab_value):
     Output('output-json-validation', 'children'),
     Output('validation', 'data'),
     Input("button-validate", "n_clicks"),
-    State('json-store', 'data'),
-    State("tab-group","value")
+    State('json-store', 'data')
 )
-def validate_json_schema(n, data, tab_value):
+def validate_json_schema(n, data):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-validate' in changed_id:
         if bool(data):
-            is_valid, msg = validate_json(data, tab_value)
+            is_valid, msg = validate_json(data, data['content_type'])
             return [str(msg),is_valid]
         else:
             return ["", False]
