@@ -342,11 +342,10 @@ targeted_callback(
 
 def show_gui_layouts(n_clicks):
     data = dash.callback_context.states["json-store.data"]
-    type = dash.callback_context.states["tab-group.value"]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-validate' in changed_id:
         if bool(data):
-            is_valid, msg = validate_json(data, type)
+            is_valid, msg = validate_json(data, data['content_type'])
             if is_valid:
                 item_list = JSONParameterEditor(_id={'type': 'parameter_editor'},   # pattern match _id (base id), name
                                                 json_blob=data["gui_parameters"],
@@ -365,7 +364,6 @@ targeted_callback(
     Input("button-validate", "n_clicks"),
     Output("gui-layout", "children"),
     State("json-store", "data"),
-    State("tab-group", "value"),
     app=app)
 
 
