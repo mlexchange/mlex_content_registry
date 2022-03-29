@@ -24,4 +24,4 @@ ENV PYTHONUNBUFFERED=1
 
 CMD bash
 WORKDIR /app/api/src
-CMD uvicorn model_api:app --host 0.0.0.0 --port 8000 --reload
+CMD uvicorn content_api:app --host 0.0.0.0 --port 8000 --reload

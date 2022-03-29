@@ -1,4 +1,5 @@
 import io
+import configparser
 import pymongo
 import uuid
 import urllib.request
@@ -8,46 +9,51 @@ import jsonschema
 from jsonschema import validate
 
 
-def model_list_GET_call():
-    """
-    Get the whole model registry data from the fastapi url.
-    """
-    url = 'http://model-api:8000/api/v0/model-list'
-    #url = 'http://localhost:8000/api/v0/model-list'
-    response = urllib.request.urlopen(url)
-    data = json.loads(response.read())
-    return data
+# config = configparser.ConfigParser()
+# config.read('config.ini')
+# MONGO_DB_URI = config['content database']['MONGO DB URI']
+MONGO_DB_URI = "mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/lbl-mlexchange?retryWrites=true&w=majority"
+
+
+# def get_model_list_call():
+#     """
+#     Get the whole model registry data from the fastapi url.
+#     """
+#     url = 'http://localhost:8000/api/v0/models'
+#     response = urllib.request.urlopen(url)
+#     data = json.loads(response.read())
+#     return data
 
 
 #connecting to mongoDB Atlas
-def conn_mongodb():
-    conn_str = "mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/lbl-mlexchange?retryWrites=true&w=majority"
+def conn_mongodb(collection='models'):
     # set a 10-second connection timeout
-    client = pymongo.MongoClient(conn_str, serverSelectionTimeoutMS=100000)
+    client = pymongo.MongoClient(MONGO_DB_URI, serverSelectionTimeoutMS=100000)
     db = client['lbl-mlexchange']
-    collection = db['models']
-    return collection
+    return db[collection]
 
 
-def get_model_list():
-    mycollection = conn_mongodb()
-    return list(mycollection.find({}).collation({'locale':'en'}).sort("model_name", pymongo.ASCENDING))
+def get_content_list(collection='models'):
+    sort_key = 'content_id'
+    if collection == 'models':
+        sort_key = 'model_name'
+    mycollection = conn_mongodb(collection)
+    return list(mycollection.find({}).collation({'locale':'en'}).sort(sort_key, pymongo.ASCENDING))
 
 
-def get_schema():
+def get_schema(type):
     """
     This function loads the given schema available
     """
-    schema = json.load(io.open('data/model_schema.json', 'r', encoding='utf-8-sig'))
-    return schema
+    return json.load(io.open('data/{}_schema.json'.format(type), 'r', encoding='utf-8-sig'))
 
 
-def validate_json(json_data):
+def validate_json(json_data, type):
     """
     REF: https://json-schema.org/ 
     """
     # Describe what kind of json you expect.
-    execute_api_schema = get_schema()
+    execute_api_schema = get_schema(type)
     try:
         validate(instance=json_data, schema=execute_api_schema)
     except jsonschema.exceptions.ValidationError as err:
@@ -59,7 +65,7 @@ def validate_json(json_data):
     return True, message
     
     
-def ifduplicate(dict_list,name_str):
+def is_duplicate(dict_list,name_str):
     """
     Check if the new model description is already existed on the mongodb.
     """
@@ -81,9 +87,9 @@ def update_mongodb(name, uri, description):
     """
     Update model registry by model_name, uri, and description.
     """
-    model_list = get_model_list()
+    model_list = get_content_list('models')
     if name != "" and name is not None:
-        _id, job_uri, job_description, found = ifduplicate(model_list, name)
+        _id, job_uri, job_description, found = is_duplicate(model_list, name)
         if not found:
             _id = str(uuid.uuid4())
             content_id = str(uuid.uuid4())

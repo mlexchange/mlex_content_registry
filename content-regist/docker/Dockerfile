@@ -25,12 +25,12 @@ RUN pip3 install --upgrade pip &&\
     pip3 install --timeout=5000 -r requirements.txt 
 
 
-WORKDIR /app/model-regist
-ENV HOME /app/model-regist
+WORKDIR /app/content-regist
+ENV HOME /app/content-regist
 COPY src src
 ENV PYTHONUNBUFFERED=1
 
 #ENTRYPOINT [ "python3" ]
 
-#CMD python3 src/model_registry.py
+#CMD python3 src/content_registry.py
 CMD ["bash"]

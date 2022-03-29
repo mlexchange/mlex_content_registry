@@ -1,8 +1,8 @@
 ﻿{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/product.schema.json",
-  "title": "model description schema",
-  "description": "A schema for defining models to store at MLExchange model registry",
+  "title": "workflow description schema",
+  "description": "A schema for defining workflows to store at MLExchange content registry",
   "type": "object",
   "properties": {
     "model_name": {
@@ -31,7 +31,7 @@
       "items": {
         "type": "string"
       },
-      "minItems": 1,
+      "minItems": 0,
       "uniqueItems": true
     },
     "description": {
@@ -88,11 +88,6 @@
   "required": [
     "model_name",
     "version",
-    "type",
-    "user",
-    "uri",
-    "application",
-    "gui_parameters",
-    "cmd"
+    "user"
   ]
 }

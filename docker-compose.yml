@@ -1,29 +1,29 @@
 version: "3.9"
 
 services:
-  model-api:
+  content-api:
     restart: "unless-stopped"
-    container_name: "model-api"
+    container_name: "content-api"
     build:
-      context: "model-api/"
+      context: "content-api/"
       dockerfile: "docker/Dockerfile"
     expose:
       - "8000"
     ports:
       - "8000:8000"
       
-  model-registry:
+  content-registry:
     restart: "unless-stopped"
-    container_name: "model-registry"
+    container_name: "content-registry"
     build:
-      context: "model-regist/"
+      context: "content-regist/"
       dockerfile: "docker/Dockerfile"
-    command: "python3 src/model_registry.py"
+    command: "python3 src/content_registry.py"
     environment:
-      DATA_DIR: "${COMPOSE_PROJECT_NAME}_models"
+      DATA_DIR: "${COMPOSE_PROJECT_NAME}_contents"
     volumes:
-      - ./model-regist/data:/app/model-regist/data    
-      - ./model-regist/src:/app/model-regist/src
+      - ./content-regist/data:/app/content-regist/data    
+      - ./content-regist/src:/app/content-regist/src
     ports:
       - "8051:8051"
 
