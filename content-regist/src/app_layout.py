@@ -247,6 +247,26 @@ register_model = dbc.Card(
 )
 
 
+data_uploader = dcc.Upload(
+    id='upload-data',
+    children=html.Div([
+        'Drag and Drop or ',
+        html.A('Select Files')
+    ]),
+    style={
+        'width': '95%',
+        'height': '60px',
+        'lineHeight': '60px',
+        'borderWidth': '1px',
+        'borderStyle': 'dashed',
+        'borderRadius': '5px',
+        'textAlign': 'center',
+        'margin': '10px'
+    },
+    # Not allow multiple files to be uploaded
+    multiple=False,
+)
+
 
 upload_model = dbc.Card(
     id="upload-model-card",
@@ -278,32 +298,10 @@ upload_model = dbc.Card(
                     html.Hr(),
                     dbc.CardBody("Please upload your content document after validation."),
                     html.Div(id='output-json-validation'),
-                    dbc.Card(
-                        [
-                            html.Div([
-                                        dcc.Upload(
-                                            id='upload-data',
-                                            children=html.Div([
-                                                'Drag and Drop or ',
-                                                html.A('Select Files')
-                                            ]),
-                                            style={
-                                                'width': '95%',
-                                                'height': '60px',
-                                                'lineHeight': '60px',
-                                                'borderWidth': '1px',
-                                                'borderStyle': 'dashed',
-                                                'borderRadius': '5px',
-                                                'textAlign': 'center',
-                                                'margin': '10px'
-                                            },
-                                            # Not allow multiple files to be uploaded
-                                            multiple=False,
-                                        ),
-                                        html.Div(id='output-data-upload'),
-                                    ]),
-                        ],
-                    ),
+                    dbc.Card([
+                        html.Div(id='data-uploader', children = data_uploader),
+                        html.Div(id='output-data-upload'),
+                    ]),
                 ],
             ),
             html.Hr(),

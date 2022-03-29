@@ -21,7 +21,7 @@ from generator import make_form_input, make_form_slider, make_form_dropdown, mak
 from targeted_callbacks import targeted_callback
 from kwarg_editor import JSONParameterEditor
 
-from app_layout import app, FILE_TEMPLATE, MODEL_REGISTRY
+from app_layout import app, data_uploader, FILE_TEMPLATE, MODEL_REGISTRY
 
 
 #----------------------------------- callback reactives ------------------------------------
@@ -171,6 +171,7 @@ def display_output(value, n_cliks):
 
 @app.callback(
     Output("json-store", "data"),
+    Output("data-uploader", "children"),
     Input("tab-group","value"),
     Input({'type': 'dynamic-dropdown', 'index': ALL}, 'value'),
     Input("name-regist", "value"),
@@ -182,7 +183,7 @@ def display_output(value, n_cliks):
     Input("description-regist", "value"),
     Input("application-regist", "value"),
     Input("cmd-regist", "value"),
-    Input('dynamic-gui-container', 'children'),
+    Input("dynamic-gui-container", "children"),
     Input("generate-json", "n_clicks"),
     Input("gui-check", "n_clicks"),
     Input('upload-data', 'contents'),
@@ -264,13 +265,13 @@ def json_generator(content_type, component_type, name, version, model_type, user
 
     if 'upload-data' in changed_id:
         json_document = {}
+        print(f'upload content {upload_content}')
         if upload_content is not None:
             json_document = json.loads(base64.b64decode(upload_content.split(",")[1]))
             json_document["_id"] = str(uuid.uuid4()) 
             json_document["content_id"] = str(uuid.uuid4())
     
-    print(f'Return json_document {json_document}')
-    return json_document
+    return json_document, data_uploader
 
 
 @app.callback(
