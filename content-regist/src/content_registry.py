@@ -55,15 +55,16 @@ def toggle_modal(n1, n2, is_open):
 # might need collapse to handle id not found issues
 @app.callback( 
     Output("tab-display", "children"),
+    Output("button-refresh", "children"),
     Input("tab-group","value")
     )
 def update_layout(tab_value):
     if tab_value == 'model':
-        return MODEL_REGISTRY
+        return MODEL_REGISTRY, 'Refresh Model List'
     elif tab_value == 'app':
-        return MODEL_REGISTRY
+        return MODEL_REGISTRY, 'Refresh App List'
     elif tab_value == 'workflow':
-        return MODEL_REGISTRY
+        return MODEL_REGISTRY, 'Refresh Workflow List'
 
 
 @app.callback( 
@@ -195,7 +196,7 @@ def display_output(value, n_cliks):
 def json_generator(content_type, component_type, name, version, model_type, user, uri, \
                    reference, description, applications, cmds, children, n1, n2, \
                    upload_content, file_name, file_date):
-    keys = ["model_name","version","type","user","uri","reference", "description"]
+    keys = ["name","version","type","user","uri","reference", "description"]
     items = [name, version, model_type, user, uri, reference, description]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     #print(f'gui container children\n{children}')
@@ -375,7 +376,7 @@ targeted_callback(
     prevent_initial_call=True,
 )
 def download_model(n_clicks, data):
-    filename = data["model_name"] + "_v" + data["version"]
+    filename = data["name"] + "_v" + data["version"]
     return dict(content=json.dumps(data), filename="{}.json".format(filename))
 
 

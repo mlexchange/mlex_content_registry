@@ -18,7 +18,7 @@ except Exception:
 
 FILE_TEMPLATE = {
     "content_type": "model",
-    "model_name": "example",
+    "name": "example",
     "version": "example",
     "type": "example",
     "user": "example",
@@ -319,7 +319,7 @@ upload_model = dbc.Card(
 
 
 #-------------------------------------------------------------------------------------
-params = ['model_name', 'version', 'user', 'type', 'uri','description']
+params = ['name', 'version', 'user', 'type', 'uri','description']
 table_models = dbc.Card(
     id = "table-models",
     children = [
