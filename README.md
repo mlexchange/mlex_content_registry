@@ -5,6 +5,7 @@ Contents include:
 	- models  
 	- apps  
 	- workflows  
+	- assets (metadata, e.g., tags, trained models etc.) 
 
 ## How to use
 **Running content registry**   
