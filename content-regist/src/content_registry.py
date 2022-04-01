@@ -181,7 +181,6 @@ def display_output(value, n_cliks):
     Input("name-regist", "value"),
     Input("version-regist", "value"),
     Input("model-type", "value"),
-    Input("user-regist", "value"),
     Input("uri-regist", "value"),
     Input("reference-regist", "value"),
     Input("description-regist", "value"),
@@ -197,7 +196,7 @@ def display_output(value, n_cliks):
 
     prevent_initial_call=True
     )
-def json_generator(content_type, component_type, name, version, model_type, user, uri, \
+def json_generator(content_type, component_type, name, version, model_type, uri, \
                    reference, description, applications, cmds, dependencies, children, n1, n2, \
                    upload_content, file_name, file_date):
     
@@ -218,8 +217,8 @@ def json_generator(content_type, component_type, name, version, model_type, user
     
     if 'generate-json' in changed_id or \
        'gui-check' in changed_id:
-        keys = ["name","version","type","user","uri","reference", "description"]
-        items = [name, version, model_type, user, uri, reference, description]
+        keys = ["name","version","type","uri","reference", "description"]
+        items = [name, version, model_type, uri, reference, description]
         for item,key in zip(items,keys):
             if key in json_document and bool(item):
                 json_document[key] = item

@@ -80,13 +80,6 @@ def dash_forms(type):
         ),
         dbc.FormGroup(
             [
-                dbc.Label("Please provide user name for the {}.".format(type), className="mr-2"),
-                dbc.Input(id="user-regist", type="text", placeholder="Enter user name.", debounce=True),
-            ],
-            className="mr-3",
-        ),
-        dbc.FormGroup(
-            [
                 dbc.Label("Please provide the URI for the {}.".format(type), className="mr-2"),
                 dbc.Input(id="uri-regist", type="text", placeholder="Enter the URI.", debounce=True),
             ],
