@@ -1,11 +1,15 @@
 # MLExchange Content Registry
 Content registry and its API for the MLExchange platform.
+The architecture looks like below.
+
+![image info](./assets/content_registry_v2.png)
 
 Contents include:  
 	- models  
 	- apps  
 	- workflows  
 	- assets (metadata, e.g., tags, trained models etc.) 
+	- 
 
 ## How to use
 **Running content registry**   
