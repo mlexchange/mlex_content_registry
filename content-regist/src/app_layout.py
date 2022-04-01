@@ -24,10 +24,10 @@ OWNER = 'mlexchange team'
 MODEL_TEMPLATE = {
     "content_type": "model",
     "name": "example",
-    "version": "example",
-    "type": "example",
+    "version": "xxx",
+    "type": "xxx",
     "owner": OWNER,
-    "uri": "example",
+    "uri": "xxx",
     "application": [],
     "description": "xxx",
     "gui_parameters": [],
@@ -37,9 +37,9 @@ MODEL_TEMPLATE = {
 APP_TEMPLATE = {
     "content_type": "app",
     "name": "example",
-    "version": "example",
+    "version": "xxx",
     "owner": OWNER,
-    "uri": "example",
+    "uri": "xxx",
     "application": [],
     "description": "xxx"
 }
@@ -47,9 +47,9 @@ APP_TEMPLATE = {
 WORKFLOW_TEMPLATE = {
     "content_type": "workflow",
     "name": "example",
-    "version": "example",
+    "version": "xxx",
     "owner": OWNER,
-    "uri": "example",
+    "uri": "xxx",
     "application": [],
     "dependency": [],
     "description": "xxx",
