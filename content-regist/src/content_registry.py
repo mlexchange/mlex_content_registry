@@ -21,8 +21,8 @@ from generator import make_form_input, make_form_slider, make_form_dropdown, mak
 from targeted_callbacks import targeted_callback
 from kwarg_editor import JSONParameterEditor
 
-from app_layout import app, data_uploader, FILE_TEMPLATE, MODEL_REGISTRY
-
+from app_layout import app, data_uploader, dash_forms, MODEL_TEMPLATE, APP_TEMPLATE, WORKFLOW_TEMPLATE, \
+                       MODEL_KEYS, APP_KEYS, WORKFLOW_KEYS, OWNER
 
 #----------------------------------- callback reactives ------------------------------------
 @app.callback(
@@ -56,15 +56,18 @@ def toggle_modal(n1, n2, is_open):
 @app.callback( 
     Output("tab-display", "children"),
     Output("button-refresh", "children"),
+    Output("collapse-model-tab", "is_open"),
+    Output("collapse-workflow-tab", "is_open"),
+    Output("table-model-list", "columns"),
     Input("tab-group","value")
     )
 def update_layout(tab_value):
     if tab_value == 'model':
-        return MODEL_REGISTRY, 'Refresh Model List'
+        return dash_forms('model'), 'Refresh Model List', True, False, [{'id': p, 'name': p} for p in MODEL_KEYS]
     elif tab_value == 'app':
-        return MODEL_REGISTRY, 'Refresh App List'
+        return dash_forms('app'), 'Refresh App List', False, False, [{'id': p, 'name': p} for p in APP_KEYS]
     elif tab_value == 'workflow':
-        return MODEL_REGISTRY, 'Refresh Workflow List'
+        return dash_forms('workflow'), 'Refresh Workflow List', False, True, [{'id': p, 'name': p} for p in WORKFLOW_KEYS]
 
 
 @app.callback( 
@@ -184,6 +187,7 @@ def display_output(value, n_cliks):
     Input("description-regist", "value"),
     Input("application-regist", "value"),
     Input("cmd-regist", "value"),
+    Input("workflow-dependencies", "value"),
     Input("dynamic-gui-container", "children"),
     Input("generate-json", "n_clicks"),
     Input("gui-check", "n_clicks"),
@@ -194,27 +198,30 @@ def display_output(value, n_cliks):
     prevent_initial_call=True
     )
 def json_generator(content_type, component_type, name, version, model_type, user, uri, \
-                   reference, description, applications, cmds, children, n1, n2, \
+                   reference, description, applications, cmds, dependencies, children, n1, n2, \
                    upload_content, file_name, file_date):
-    keys = ["name","version","type","user","uri","reference", "description"]
-    items = [name, version, model_type, user, uri, reference, description]
+    
+    
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     #print(f'gui container children\n{children}')
     
-    json_document = FILE_TEMPLATE.copy()  # shallow copy
-    json_document["gui_parameters"] = []  # set the gui parameter list to empty
+    json_document = MODEL_TEMPLATE.copy()  # shallow copy
+    if content_type == 'model':
+        json_document["gui_parameters"] = []  # set the gui parameter list to empty
+    if content_type == 'app':
+        json_document = APP_TEMPLATE.copy()
+    elif content_type == 'workflow':
+        json_document = WORKFLOW_TEMPLATE.copy()
+        
     json_document["_id"] = str(uuid.uuid4())
     json_document["content_id"] = str(uuid.uuid4())
     
-    if content_type == 'app':
-        json_document['content_type'] = 'app'
-    elif content_type == 'workflow':
-        json_document['content_type'] = 'workflow'
-    
     if 'generate-json' in changed_id or \
        'gui-check' in changed_id:
+        keys = ["name","version","type","user","uri","reference", "description"]
+        items = [name, version, model_type, user, uri, reference, description]
         for item,key in zip(items,keys):
-            if bool(item):
+            if key in json_document and bool(item):
                 json_document[key] = item
 
         if bool(applications):
@@ -223,12 +230,25 @@ def json_generator(content_type, component_type, name, version, model_type, user
                 if application not in json_document["application"]:
                     json_document["application"].append(application)
         
-        if bool(cmds):
+        if 'cmd' in json_document and bool(cmds):
             cmds = cmds.split(",")
             for cmd in cmds:
                 if cmd not in json_document["cmd"]:
                     json_document["cmd"].append(cmd)
-        
+                    
+        if "dependency" in json_document and bool(dependencies):
+            workflow_dependencies = []
+            apps = dependencies.split(',')
+            for app in apps:
+                parallel_apps = app.split(';')
+                if len(parallel_apps) == 1:
+                    workflow_dependencies.append(app)
+                else:
+                    para_apps = []
+                    for item in parallel_apps:
+                        para_apps.append(item)
+                    workflow_dependencies.append(para_apps)
+            json_document['dependency'] = workflow_dependencies
         
         if children[0]['props']['children'][2]['props']['children'] is not None and bool(component_type):
             for k,child in enumerate(children):
@@ -271,6 +291,7 @@ def json_generator(content_type, component_type, name, version, model_type, user
             json_document = json.loads(base64.b64decode(upload_content.split(",")[1]))
             json_document["_id"] = str(uuid.uuid4()) 
             json_document["content_id"] = str(uuid.uuid4())
+            json_document["owner"] = OWNER
     
     return json_document, data_uploader
 
@@ -280,19 +301,18 @@ def json_generator(content_type, component_type, name, version, model_type, user
     Input('button-register', 'n_clicks'),
     Input('button-upload', 'n_clicks'),
     State('validation', 'data'),
-    State("json-store", "data"),
-    State("tab-group","value")
+    State("json-store", "data")
 )
-def add_new_content(n1, n2, is_valid, json_document, tab_value):
+def add_new_content(n1, n2, is_valid, json_document):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-upload.n_clicks' in changed_id:
         if bool(json_document) and is_valid:
-            mycollection = conn_mongodb(tab_value+'s')
+            mycollection = conn_mongodb(json_document['content_type']+'s')
             mycollection.insert_one(json_document)
 
     if 'button-register.n_clicks' in changed_id:
         if bool(json_document):
-            mycollection = conn_mongodb(tab_value+'s')
+            mycollection = conn_mongodb(json_document['content_type']+'s')
             mycollection.insert_one(json_document)
 
 
@@ -345,7 +365,7 @@ targeted_callback(
 def show_gui_layouts(n_clicks):
     data = dash.callback_context.states["json-store.data"]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if 'button-validate' in changed_id:
+    if 'button-validate' in changed_id and 'gui_parameters' in data:
         if bool(data):
             is_valid, msg = validate_json(data, data['content_type'])
             if is_valid:
