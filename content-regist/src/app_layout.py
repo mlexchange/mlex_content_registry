@@ -211,46 +211,44 @@ register_model = dbc.Card(
         [
             html.Div([
                 html.Div([
+                    #dbc.Label('1.'),
                     dbc.Button(
-                        "Register New Content",
-                        id="button-register",
+                        "Generate New Content",
+                        id="generate-json",
                         className="mr-1",
                         color="success",
                         size="sm",
-                        n_clicks=0,
-                        style={'width':'40%'}
+                        style={'width':'40%', 'margin': '10px'}
                     ),
-                    dbc.Button(
-                        "Update Existing Content",
-                        id="button-update",
-                        className="mr-1",
-                        color="warning",
-                        size="sm",
-                        n_clicks=0,
-                        style={'width':'40%'}
-                    )],
+                    dbc.Label('after filling out the forms below. Then,'),
+                    ],
                     className='row',
-                    style={'align-items': 'center', 'justify-content': 'center'}
+                    style={'align-items': 'center', 'justify-content': 'left'}
                 ),
-                html.Hr(),
                 html.Div(
                     [
+                        #dbc.Label('2.'),
                         dbc.Button(
-                            "Generate Content Document",
-                            id="generate-json",
-                            className="mr-2",
+                            "Register New Content",
+                            id="button-register",
+                            className="mr-1",
                             color="success",
                             size="sm",
-                            style={'width':'40%'}
+                            n_clicks=0,
+                            style={'width':'40%', 'margin-left': '10px', 'margin-right': '10px'}
                         ),
+                        dbc.Label('or'),
                         html.Div([
                             html.Button("Download Content Document", id="btn-download-txt"),
                             dcc.Download(id="download-text")
-                        ]),
+                            ],
+                            style={'width':'45%', 'margin-left': '10px'}
+                        ),
                     ],
                     className='row',
-                    style={'align-items': 'center', 'justify-content': 'center', 'margin-bottom': '20px'}
+                    style={'align-items': 'center', 'justify-content': 'left', 'margin-bottom': '20px'}
                 ),
+                html.Hr(),
                 html.Div(
                     [
                         dbc.RadioItems(
@@ -268,10 +266,8 @@ register_model = dbc.Card(
                             value="model")
                     ],
                     className="radio-group",
-                    style ={'margin-bottom': '10px'},
-                ),
-                #MODEL_REGISTRY,
-                ],
+                    style ={'justify-content': 'center', 'margin-bottom': '10px'},
+                )],
                 style={'align-items': 'center', 'justify-content': 'center', 'margin-bottom': '20px'},   
             ),
             html.Div(id='tab-display', children=dbc.Form(children=dash_forms('model'))),
@@ -320,27 +316,26 @@ upload_model = dbc.Card(
                 [
                     html.Div(
                         [
+                            dbc.Label("Please upload your content document after validation."),
                             dbc.Button(
                                  "Validate Content Document",
                                 id="button-validate",
                                 className="mr-2",
                                 color="success",
                                 size="sm",
-                                style={'width':'40%'}
+                                style={'width':'40%', 'margin-top': '10px'}
                             ),
                             dbc.Button(
                                 "Upload Content Document",
                                 id="button-upload",
                                 color="success",
                                 size="sm",
-                                style={'width':'40%'}
+                                style={'width':'40%', 'margin-top': '10px'}
                             ),
                         ],
                         className='row',
-                        style={'align-items': 'center', 'justify-content': 'center'}
+                        style={'align-items': 'center', 'justify-content': 'center', 'margin-bottom': '20px'}
                     ),
-                    html.Hr(),
-                    dbc.CardBody("Please upload your content document after validation."),
                     html.Div(id='output-json-validation'),
                     dbc.Card([
                         html.Div(id='data-uploader', children = data_uploader),
@@ -348,15 +343,7 @@ upload_model = dbc.Card(
                     ]),
                 ],
             ),
-            html.Hr(),
-            dbc.Card(
-            [
-                #dbc.CardHeader("GUI layout"),
-                html.H5("GUI Layout", className="card-title"),
-                html.Div(id='gui-layout',
-                        children=[]
-                ),
-            ])
+            html.Div(id='gui-layout', children=[])
         ])
     ]
 )

@@ -72,43 +72,13 @@ def update_layout(tab_value):
 
 @app.callback( 
     Output("table-contents-cache", "data"),
-    Input("name-regist","value"),
-    Input("uri-regist","value"),
-    Input("description-regist","value"),
     Input('table-model-list', 'selected_rows'),
-    #Input('button-register', 'n_clicks'),
-    Input('button-update', 'n_clicks'),
     Input('confirm-delete', 'n_clicks'),
     State("tab-group","value")
     )
-def update_regist(regist_name, regist_uri, regist_description, rows, sub1, sub2, tab_value):
+def update_regist(rows, n_click, tab_value):
     content_list = get_content_list(tab_value+'s')
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    #output messages
-    output = ''
-    output1 = 'The model name you are looking for does not exist!'
-    output2 = 'Please provide a valid model name!'
-    
-#     if 'button-register' in changed_id:
-#         if regist_name != "" and regist_name is not None:
-#             _id, job_uri, job_description, found = is_duplicate(model_list,regist_name)
-#             if all(v is not None for v in [_id, job_uri, job_description]):
-#                 output = 'The model name is already existed! Please use a differnet name!'
-#             else:
-#                 update_mongodb(regist_name, regist_uri, regist_description)
-#         else:
-#             output = 'Please provide a model name!'
-    
-    if 'button-update' in changed_id:
-        if regist_name != "" and regist_name is not None:
-            _id, job_uri, job_description, found = is_duplicate(content_list, regist_name)
-            if not found:
-                output = output1
-            else:
-                update_mongodb(regist_name, regist_uri, regist_description)
-        else:
-            output = output2
-        
     if 'confirm-delete' in changed_id:
         if bool(rows):
             content_ids = [] 
@@ -258,7 +228,6 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                     if 'value' in input_item['props']:
                         input_type  = input_item["props"]["id"]["subtype"]
                         input_value = input_item["props"]["value"]
-                        print(f'subtype is {input_type}, its value is {input_value}')
                         if input_type == 'marks':
                             marks = {}
                             input_value = input_value.split(",")
@@ -285,7 +254,6 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
 
     if 'upload-data' in changed_id:
         json_document = {}
-        print(f'upload content {upload_content}')
         if upload_content is not None:
             json_document = json.loads(base64.b64decode(upload_content.split(",")[1]))
             json_document["_id"] = str(uuid.uuid4()) 
@@ -342,7 +310,6 @@ def show_dynamic_gui_layouts(n_clicks):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'gui-check' in changed_id:
         if bool(data):
-            print(f'gui parameters data\n{data["gui_parameters"]}')
             item_list = JSONParameterEditor( _id={'type': 'parameter_editor'},   # pattern match _id (base id), name
                                              json_blob=data["gui_parameters"],
                                             )
@@ -372,7 +339,7 @@ def show_gui_layouts(n_clicks):
                                                 json_blob=data["gui_parameters"],
                                             )
                 item_list.init_callbacks(app)
-                return [item_list]
+                return [html.H5("GUI Layout", className="card-title"), item_list]
             else:
                 return[""]
         else:
