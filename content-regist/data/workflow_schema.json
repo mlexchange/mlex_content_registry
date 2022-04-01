@@ -5,28 +5,24 @@
   "description": "A schema for defining workflows to store at MLExchange content registry",
   "type": "object",
   "properties": {
-    "model_name": {
-      "description": "model name",
+    "content_type": {
+      "description": "content is workflow ",
+      "type": "string"
+    },
+    "name": {
+      "description": "workflow name",
       "type": "string"
     },
     "version": {
-      "description": "model version",
-      "type": "string"
-    },
-    "type": {
-      "description": "model type (supervised or unsupervised)",
-      "type": "string"
-    },
-    "user": {
-      "description": "user name of the model",
+      "description": "workflow version",
       "type": "string"
     },
     "uri": {
-      "description": "resource locator of the model image",
+      "description": "resource locator of the workflow",
       "type": "string"
     },
     "application": {
-      "description": "applciations of the model",
+      "description": "applciations of the workflow",
       "type": "array",
       "items": {
         "type": "string"
@@ -35,59 +31,20 @@
       "uniqueItems": true
     },
     "description": {
-      "description": "model description",
+      "description": "workflow description",
       "type": "string"
     },
-    "gui_parameters": {
-      "description": "GUI component parameters",
+    "dependency": {
+      "description": "app dependencies in the workflow",
       "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "int": {
-            "description": "int type input component",
-            "type": "object"
-          },
-          "float": {
-            "description": "float type input component",
-            "type": "object"
-          },
-          "str": {
-            "description": "str type input component",
-            "type": "object"
-          },
-          "slider": {
-            "description": "slider component",
-            "type": "object"
-          },
-          "dropdown": {
-            "description": "dropdown menu component",
-            "type": "object"
-          },
-          "radio": {
-            "description": "radio item component",
-            "type": "object"
-          },
-          "bool": {
-            "description": "boolean component",
-            "type": "object"
-          }
-        },
-        "required": []
-      }
-    },
-    "cmd": {
-      "description": "commands to deploy the model",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
+      "minItems": 0,
       "uniqueItems": true
     }
   },
   "required": [
-    "model_name",
+    "content_type",
+    "name",
     "version",
-    "user"
+    "dependency"
   ]
 }
