@@ -181,12 +181,12 @@ MODEL_REGISTRY = html.Div([
         n_clicks=0,
     ),
     dbc.Button(
-        "See GUI Component(s)",
+        "Double-click to See GUI Component(s)",
         id="gui-check",
         className="mr-1",
         color="success",
         size="sm",
-        style={'width':'40%'},
+        style={'width':'55%'},
         n_clicks=0,
     ),
     html.Div(id='dynamic-gui-container', children=[]),
@@ -218,7 +218,7 @@ register_model = dbc.Card(
                         className="mr-1",
                         color="success",
                         size="sm",
-                        style={'width':'40%', 'margin': '10px'}
+                        style={'width':'40%', 'margin': '10px', 'margin-left': '15px'}
                     ),
                     dbc.Label('after filling out the forms below. Then,'),
                     ],
@@ -235,14 +235,14 @@ register_model = dbc.Card(
                             color="success",
                             size="sm",
                             n_clicks=0,
-                            style={'width':'40%', 'margin-left': '10px', 'margin-right': '10px'}
+                            style={'width':'40%', 'margin-left': '15px', 'margin-right': '15px'}
                         ),
                         dbc.Label('or'),
                         html.Div([
                             html.Button("Download Content Document", id="btn-download-txt"),
                             dcc.Download(id="download-text")
                             ],
-                            style={'width':'45%', 'margin-left': '10px'}
+                            style={'width':'45%', 'margin-left': '15px'}
                         ),
                     ],
                     className='row',

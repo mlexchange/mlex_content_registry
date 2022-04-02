@@ -14,7 +14,8 @@ import uuid
 import json
 import base64
 
-from utility import conn_mongodb, get_content_list, get_schema, validate_json, is_duplicate, update_mongodb
+from utility import conn_mongodb, get_content_list, get_schema, validate_json, is_duplicate, \
+                    update_mongodb, remove_key_from_dict_list
 from generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
                       make_form_bool, make_form_graph
 
@@ -235,7 +236,7 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                             for l in range(int(length/2)):
                                 marks[input_value[2*l]] = input_value[2*l+1]
                             component_combo[input_type] = marks 
-                    
+                
                         elif input_type == 'options':
                             input_value = input_value.split(",")
                             options = []
@@ -308,13 +309,13 @@ def show_dynamic_gui_layouts(n_clicks):
     """
     data = dash.callback_context.states["json-store.data"]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if 'gui-check' in changed_id:
-        if bool(data):
+    if 'gui-check' in changed_id and 'gui_parameters' in data:
+        if bool(data["gui_parameters"]):
             item_list = JSONParameterEditor( _id={'type': 'parameter_editor'},   # pattern match _id (base id), name
-                                             json_blob=data["gui_parameters"],
+                                             json_blob=remove_key_from_dict_list(data["gui_parameters"], "comp_group"),
                                             )
             item_list.init_callbacks(app)
-            return [item_list]
+            return [html.H5("GUI Layout", className="card-title"), item_list]
         else:
             return[""]
     else:
@@ -332,11 +333,11 @@ def show_gui_layouts(n_clicks):
     data = dash.callback_context.states["json-store.data"]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-validate' in changed_id and 'gui_parameters' in data:
-        if bool(data):
+        if bool(data["gui_parameters"]):
             is_valid, msg = validate_json(data, data['content_type'])
             if is_valid:
                 item_list = JSONParameterEditor(_id={'type': 'parameter_editor'},   # pattern match _id (base id), name
-                                                json_blob=data["gui_parameters"],
+                                                json_blob=remove_key_from_dict_list(data["gui_parameters"], "comp_group"),
                                             )
                 item_list.init_callbacks(app)
                 return [html.H5("GUI Layout", className="card-title"), item_list]

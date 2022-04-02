@@ -7,6 +7,7 @@ import requests
 import json
 import jsonschema
 from jsonschema import validate
+from copy import deepcopy
 
 
 # config = configparser.ConfigParser()
@@ -103,5 +104,23 @@ def update_mongodb(name, uri, description):
             if description != "" and description is not None:
                 mycollection = conn_mongodb()
                 mycollection.update_one({"_id": _id},{"$set":{"description": description}})
+
+
+def remove_key_from_dict_list(data, key):
+    new_data = []
+    for item in data:
+        if key in item:
+            new_item = deepcopy(item)
+            new_item.pop(key)
+            new_data.append(new_item)
+        else:
+            new_data.append(item)
+    
+    return new_data 
+
+
+
+
+
 
 
