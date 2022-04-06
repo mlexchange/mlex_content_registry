@@ -45,14 +45,14 @@ def remove_key_from_dict_list(data, key):
 
     return new_data
 
+#----------------- utilities -------------------
+@app.get(API_URL_PREFIX+"/models/{uid}/model/{comp_group}/gui_params", tags=['model'])
+async def get_model_gui_params(uid: str, comp_group: str):
+    mycollection = conn_mongodb('models')
+    return remove_key_from_dict_list(mycollection.find_one({"content_id": uid}), comp_group)
 
-# @app.get(API_URL_PREFIX+"/models/{uid}/model/gui_params/{comp_group}", tags=['models'])
-# async def get_gui_params(uid: str, comp_group: str):
-#     mycollection = conn_mongodb('
-#     #model_list = list(mycollection.find({}).sort("model_name",pymongo.ASCENDING))
-#     return list(mycollection.find({}).collation({'locale':'en'}).sort("model_name", pymongo.ASCENDING))
 
-
+#------------------ models ----------------------
 @app.get(API_URL_PREFIX+"/models", tags=['models'])
 async def get_models():
     mycollection = conn_mongodb('models')
@@ -65,7 +65,7 @@ async def get_model(uid: str):
     mycollection = conn_mongodb('models')
     return mycollection.find_one({"content_id": uid})
     
-
+#-------------------- apps ---------------------
 @app.get(API_URL_PREFIX+"/apps", tags=['apps'])
 async def get_apps():
     mycollection = conn_mongodb('apps')
@@ -77,7 +77,7 @@ async def get_app(uid: str):
     mycollection = conn_mongodb('apps')
     return mycollection.find_one({"content_id": uid})
 
-
+#--------------------- workflows ------------------------
 @app.get(API_URL_PREFIX+"/workflows", tags=['workflows'])
 async def get_workflows():
     mycollection = conn_mongodb('workflows')
@@ -90,7 +90,7 @@ async def get_workflow(uid: str):
     return mycollection.find_one({"content_id": uid})
 
 
-#--------------------------------------- assets ------------------------------------------
+#-------------------- assets -----------------------
 @app.post(API_URL_PREFIX+"/assets", tags=['assets'])
 async def add_models(data: list):
     for content in data:
