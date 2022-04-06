@@ -7,8 +7,7 @@ from fastapi import FastAPI
 
 config = configparser.ConfigParser()
 config.read('config.ini')
-MONGO_DB_URI = config['content database']['MONGO DB URI']
-MONGO_DB_URI = "mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/lbl-mlexchange?retryWrites=true&w=majority"
+MONGO_DB_URI = "mongodb+srv://admin:%s" % config['content database']['ATLAS_ADMIN']
 
 #connecting to mongoDB Atlas
 def conn_mongodb(collection='models'):
@@ -32,6 +31,26 @@ app = FastAPI(  openapi_url ="/api/lbl-mlexchange/openapi.json",
                 docs_url    ="/api/lbl-mlexchange/docs",
                 redoc_url   ="/api/lbl-mlexchange/redoc",
              )
+
+
+def remove_key_from_dict_list(data, key):
+    new_data = []
+    for item in data:
+        if key in item:
+            new_item = deepcopy(item)
+            new_item.pop(key)
+            new_data.append(new_item)
+        else:
+            new_data.append(item)
+
+    return new_data
+
+
+# @app.get(API_URL_PREFIX+"/models/{uid}/model/gui_params/{comp_group}", tags=['models'])
+# async def get_gui_params(uid: str, comp_group: str):
+#     mycollection = conn_mongodb('
+#     #model_list = list(mycollection.find({}).sort("model_name",pymongo.ASCENDING))
+#     return list(mycollection.find({}).collation({'locale':'en'}).sort("model_name", pymongo.ASCENDING))
 
 
 @app.get(API_URL_PREFIX+"/models", tags=['models'])

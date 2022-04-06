@@ -25,6 +25,7 @@ from kwarg_editor import JSONParameterEditor
 from app_layout import app, data_uploader, dash_forms, MODEL_TEMPLATE, APP_TEMPLATE, WORKFLOW_TEMPLATE, \
                        MODEL_KEYS, APP_KEYS, WORKFLOW_KEYS, OWNER
 
+
 #----------------------------------- callback reactives ------------------------------------
 @app.callback(
     Output("table-model-list", "data"),
@@ -310,7 +311,7 @@ def show_dynamic_gui_layouts(n_clicks):
     data = dash.callback_context.states["json-store.data"]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'gui-check' in changed_id and 'gui_parameters' in data:
-        if bool(data["gui_parameters"]):
+        if bool(data["gui_parameters"]):                    
             item_list = JSONParameterEditor( _id={'type': 'parameter_editor'},   # pattern match _id (base id), name
                                              json_blob=remove_key_from_dict_list(data["gui_parameters"], "comp_group"),
                                             )

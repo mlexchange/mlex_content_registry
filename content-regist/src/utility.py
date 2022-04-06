@@ -9,13 +9,6 @@ import jsonschema
 from jsonschema import validate
 from copy import deepcopy
 
-
-# config = configparser.ConfigParser()
-# config.read('config.ini')
-# MONGO_DB_URI = config['content database']['MONGO DB URI']
-MONGO_DB_URI = "mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/lbl-mlexchange?retryWrites=true&w=majority"
-
-
 # def get_model_list_call():
 #     """
 #     Get the whole model registry data from the fastapi url.
@@ -25,6 +18,11 @@ MONGO_DB_URI = "mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/
 #     data = json.loads(response.read())
 #     return data
 
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+#MONGO_DB_URI = "mongodb+srv://admin:%s" % config['content database']['ATLAS_ADMIN']
+MONGO_DB_URI = "mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/lbl-mlexchange?retryWrites=true&w=majority"
 
 #connecting to mongoDB Atlas
 def conn_mongodb(collection='models'):
@@ -117,7 +115,6 @@ def remove_key_from_dict_list(data, key):
             new_data.append(item)
     
     return new_data 
-
 
 
 
