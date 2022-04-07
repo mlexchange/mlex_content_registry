@@ -1,3 +1,4 @@
+import os
 import configparser
 import uuid
 import pymongo
@@ -6,7 +7,7 @@ from typing import Optional
 from fastapi import FastAPI
 
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 MONGO_DB_URI = "mongodb+srv://admin:%s" % config['content database']['ATLAS_ADMIN']
 
 #connecting to mongoDB Atlas
@@ -47,33 +48,33 @@ def remove_key_from_dict_list(data, key):
 
 #----------------- utilities -------------------
 @app.get(API_URL_PREFIX+"/models/{uid}/model/{comp_group}/gui_params", tags=['model'])
-async def get_model_gui_params(uid: str, comp_group: str):
+def get_model_gui_params(uid: str, comp_group: str):
     mycollection = conn_mongodb('models')
     return remove_key_from_dict_list(mycollection.find_one({"content_id": uid}), comp_group)
 
 
 #------------------ models ----------------------
 @app.get(API_URL_PREFIX+"/models", tags=['models'])
-async def get_models():
+def get_models():
     mycollection = conn_mongodb('models')
     #model_list = list(mycollection.find({}).sort("model_name",pymongo.ASCENDING))
     return list(mycollection.find({}).collation({'locale':'en'}).sort("model_name", pymongo.ASCENDING))
     
     
 @app.get(API_URL_PREFIX+"/models/{uid}/model", tags=['models', 'model'])
-async def get_model(uid: str):
+def get_model(uid: str):
     mycollection = conn_mongodb('models')
     return mycollection.find_one({"content_id": uid})
     
 #-------------------- apps ---------------------
 @app.get(API_URL_PREFIX+"/apps", tags=['apps'])
-async def get_apps():
+def get_apps():
     mycollection = conn_mongodb('apps')
     return list(mycollection.find({}).collation({'locale':'en'}).sort("model_name", pymongo.ASCENDING))
     
     
 @app.get(API_URL_PREFIX+"/apps/{uid}/app", tags=['apps', 'app'])
-async def get_app(uid: str):
+def get_app(uid: str):
     mycollection = conn_mongodb('apps')
     return mycollection.find_one({"content_id": uid})
 
@@ -85,14 +86,14 @@ async def get_workflows():
 
 
 @app.get(API_URL_PREFIX+"/workflows/{uid}/workflow", tags=['workflows', 'workflow'])
-async def get_workflow(uid: str):
+def get_workflow(uid: str):
     mycollection = conn_mongodb('workflows')
     return mycollection.find_one({"content_id": uid})
 
 
 #-------------------- assets -----------------------
 @app.post(API_URL_PREFIX+"/assets", tags=['assets'])
-async def add_models(data: list):
+def add_models(data: list):
     for content in data:
         content["_id"] = str(uuid.uuid4())
         content["content_id"] = str(uuid.uuid4())
@@ -101,7 +102,7 @@ async def add_models(data: list):
     
     
 @app.post(API_URL_PREFIX+"/assets/{uid}/asset", tags=['assets', 'asset'])
-async def add_model(uid: str, data: dict):
+def add_model(uid: str, data: dict):
     data["_id"] = str(uuid.uuid4())
     data["content_id"] = str(uuid.uuid4())
     mycollection = conn_mongodb('assets')
@@ -109,25 +110,25 @@ async def add_model(uid: str, data: dict):
 
 
 @app.get(API_URL_PREFIX+"/assets", tags=['assets'])
-async def get_workflows():
+def get_workflows():
     mycollection = conn_mongodb('assets', tags=['assets'])
     return list(mycollection.find({}).collation({'locale':'en'}).sort("model_name", pymongo.ASCENDING))
 
 
 @app.get(API_URL_PREFIX+"/assets/{uid}/asset", tags=['assets', 'asset'])
-async def get_workflow(uid: str):
+def get_workflow(uid: str):
     mycollection = conn_mongodb('assets')
     return mycollection.find_one({"content_id": uid})
 
 
 @app.delete(API_URL_PREFIX+"/assets", tags=['assets'])
-async def delete_models(query):
+def delete_models(query):
     mycollection = conn_mongodb('assets')
     return mycollection.delete_many(query)
     
     
 @app.delete(API_URL_PREFIX+"/assets/{uid}/asset", tags=['assets', 'asset'])
-async def delete_model(uid: str):
+def delete_model(uid: str):
     mycollection = conn_mongodb('assets')
     return mycollection.delete_one({"content_id": uid})
     
