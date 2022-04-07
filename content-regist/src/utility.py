@@ -10,19 +10,10 @@ import jsonschema
 from jsonschema import validate
 from copy import deepcopy
 
-# def get_model_list_call():
-#     """
-#     Get the whole model registry data from the fastapi url.
-#     """
-#     url = 'http://localhost:8000/api/v0/models'
-#     response = urllib.request.urlopen(url)
-#     data = json.loads(response.read())
-#     return data
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 MONGO_DB_URI = "mongodb+srv://admin:%s" % config['content database']['ATLAS_ADMIN']
-#MONGO_DB_URI = "mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/lbl-mlexchange?retryWrites=true&w=majority"
 
 #connecting to mongoDB Atlas
 def conn_mongodb(collection='models'):

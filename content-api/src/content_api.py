@@ -54,6 +54,7 @@ def get_model_gui_params(uid: str, comp_group: str):
 
 
 #------------------ models ----------------------
+#url = 'http://localhost:8000/api/v0/models'
 @app.get(API_URL_PREFIX+"/models", tags=['models'])
 def get_models():
     mycollection = conn_mongodb('models')
