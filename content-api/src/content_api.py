@@ -49,7 +49,7 @@ def get_model(uid: str):
 
 
 @app.get(API_URL_PREFIX+"/models/{uid}/model/{comp_group}/gui_params", tags=['model'])
-def get_model_gui_params(uid: str, comp_group: str):
+def get_group_gui_params(uid: str, comp_group: str):
     mycollection = conn_mongodb('models')
     gui_params = mycollection.find_one({"content_id": uid})["gui_parameters"]
     group = []
