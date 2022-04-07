@@ -1,3 +1,4 @@
+import os
 import io
 import configparser
 import pymongo
@@ -18,11 +19,10 @@ from copy import deepcopy
 #     data = json.loads(response.read())
 #     return data
 
-
 config = configparser.ConfigParser()
-config.read('config.ini')
-#MONGO_DB_URI = "mongodb+srv://admin:%s" % config['content database']['ATLAS_ADMIN']
-MONGO_DB_URI = "mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/lbl-mlexchange?retryWrites=true&w=majority"
+config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
+MONGO_DB_URI = "mongodb+srv://admin:%s" % config['content database']['ATLAS_ADMIN']
+#MONGO_DB_URI = "mongodb+srv://admin:LlDauH4SZIzhs4zL@cluster0.z0jfy.mongodb.net/lbl-mlexchange?retryWrites=true&w=majority"
 
 #connecting to mongoDB Atlas
 def conn_mongodb(collection='models'):
