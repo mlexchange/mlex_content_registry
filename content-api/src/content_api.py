@@ -2,7 +2,7 @@ import os
 import configparser
 import uuid
 import pymongo
-
+from copy import deepcopy
 from typing import Optional
 from fastapi import FastAPI
 
@@ -33,24 +33,20 @@ app = FastAPI(  openapi_url ="/api/lbl-mlexchange/openapi.json",
                 redoc_url   ="/api/lbl-mlexchange/redoc",
              )
 
-
-def remove_key_from_dict_list(data, key):
-    new_data = []
-    for item in data:
-        if key in item:
-            new_item = deepcopy(item)
-            new_item.pop(key)
-            new_data.append(new_item)
-        else:
-            new_data.append(item)
-
-    return new_data
-
 #----------------- utilities -------------------
 @app.get(API_URL_PREFIX+"/models/{uid}/model/{comp_group}/gui_params", tags=['model'])
 def get_model_gui_params(uid: str, comp_group: str):
     mycollection = conn_mongodb('models')
-    return remove_key_from_dict_list(mycollection.find_one({"content_id": uid}), comp_group)
+    gui_params = mycollection.find_one({"content_id": uid})["gui_parameters"]
+    group = []
+    for param in gui_params:
+        if "comp_group" in param.keys():
+            if param["comp_group"] == comp_group:
+                new_param = deepcopy(param)
+                new_param.pop("comp_group")
+                group.append(new_param)
+
+    return group
 
 
 #------------------ models ----------------------
