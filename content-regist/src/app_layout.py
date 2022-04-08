@@ -15,24 +15,100 @@ try:
 except Exception:
     print("Unable to connect to the server.")
 
+MODEL_KEYS    = ['name', 'version', 'owner', 'type', 'uri','description']
+APP_KEYS      = ['name', 'version', 'owner', 'content_id', 'uri','description']
+WORKFLOW_KEYS = ['name', 'version', 'owner', 'description']
 
-FILE_TEMPLATE = {
+OWNER = 'mlexchange team'
+
+MODEL_TEMPLATE = {
     "content_type": "model",
-    "model_name": "example",
-    "version": "example",
-    "type": "example",
-    "user": "example",
-    "uri": "example",
+    "name": "example",
+    "version": "xxx",
+    "type": "xxx",
+    "owner": OWNER,
+    "uri": "xxx",
     "application": [],
     "description": "xxx",
     "gui_parameters": [],
     "cmd": []
 }
 
+APP_TEMPLATE = {
+    "content_type": "app",
+    "name": "example",
+    "version": "xxx",
+    "owner": OWNER,
+    "uri": "xxx",
+    "application": [],
+    "description": "xxx"
+}
+
+WORKFLOW_TEMPLATE = {
+    "content_type": "workflow",
+    "name": "example",
+    "version": "xxx",
+    "owner": OWNER,
+    "uri": "xxx",
+    "application": [],
+    "dependency": [],
+    "description": "xxx",
+}
+
 
 external_stylesheets = [dbc.themes.BOOTSTRAP, "../assets/segmentation-style.css",]  # need to use bootstrap themes
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+
+#-------------------------------------- function -----------------------------------------
+def dash_forms(type):
+    forms = [
+        dbc.FormGroup(
+            [
+                dbc.Label("Please give a name for the {}.".format(type), className="mr-2"),
+                dbc.Input(id="name-regist", type="text", placeholder="Enter {} name.".format(type), debounce=True),
+            ],
+            className="mr-3",
+        ),
+        dbc.FormGroup(
+            [
+                dbc.Label("Please provide the version for the {}.".format(type), className="mr-2"),
+                dbc.Input(id="version-regist", type="text", placeholder="Enter {} version.".format(type), debounce=True),
+            ],
+            className="mr-3",
+        ),
+        dbc.FormGroup(
+            [
+                dbc.Label("Please provide the URI for the {}.".format(type), className="mr-2"),
+                dbc.Input(id="uri-regist", type="text", placeholder="Enter the URI.", debounce=True),
+            ],
+            className="mr-3",
+        ),
+        dbc.FormGroup(
+            [
+                dbc.Label("Enter reference for the {}.".format(type), className="mr-2"),
+                dbc.Input(id="reference-regist", type="text", placeholder="Enter reference.",debounce=True),
+            ],
+            className="mr-3",
+        ),
+        dbc.FormGroup(
+            [
+                dbc.Label("Enter description (optional) for the {}.".format(type), className="mr-2"),
+                dbc.Input(id="description-regist", type="text", placeholder="Enter description.",debounce=True),
+            ],
+            className="mr-3",
+        ),
+        dbc.FormGroup(
+            [
+                dbc.Label("Enter application(s) for the {} (e.g., image segmentation). Use comma to separate.".format(type), className="mr-2"),
+                dbc.Input(id="application-regist", type="text", placeholder="Enter applications for this {}".format(type),debounce=True),
+            ],
+            className="mr-3",
+        )
+    ]
+    return forms
+
 
 
 #--------------------------------------- App layouts -------------------------------------
@@ -73,69 +149,15 @@ header= dbc.Navbar(
 )
 
 
-form_regist = dbc.Form(
-    [
-        dbc.FormGroup(
-            [
-                dbc.Label("Please give a name for the model.", className="mr-2"),
-                dbc.Input(id="name-regist", type="text", placeholder="Enter model name.", debounce=True),
-            ],
-            className="mr-3",
-        ),
-        dbc.FormGroup(
-            [
-                dbc.Label("Please provide the version for the model.", className="mr-2"),
-                dbc.Input(id="version-regist", type="text", placeholder="Enter model version.", debounce=True),
-            ],
-            className="mr-3",
-        ),
-        dbc.FormGroup(
-            [
-                dbc.Label("Please provide user name for the model.", className="mr-2"),
-                dbc.Input(id="user-regist", type="text", placeholder="Enter user name.", debounce=True),
-            ],
-            className="mr-3",
-        ),
-        dbc.FormGroup(
-            [
-                dbc.Label("Please provide the URI for the model.", className="mr-2"),
-                dbc.Input(id="uri-regist", type="text", placeholder="Enter the URI.", debounce=True),
-            ],
-            className="mr-3",
-        ),
-        dbc.FormGroup(
-            [
-                dbc.Label("Enter reference for the model.", className="mr-2"),
-                dbc.Input(id="reference-regist", type="text", placeholder="Enter reference.",debounce=True),
-            ],
-            className="mr-3",
-        ),
-        dbc.FormGroup(
-            [
-                dbc.Label("Enter description (optional) for the model.", className="mr-2"),
-                dbc.Input(id="description-regist", type="text", placeholder="Enter description.",debounce=True),
-            ],
-            className="mr-3",
-        ),
-        dbc.FormGroup(
-            [
-                dbc.Label("Enter application(s) for the model (e.g., image segmentation). Use comma to separate.", className="mr-2"),
-                dbc.Input(id="application-regist", type="text", placeholder="Enter applications for this model",debounce=True),
-            ],
-            className="mr-3",
-        ),
+MODEL_REGISTRY = html.Div([
+    dbc.Form([
         dbc.FormGroup(
             [   dbc.Label("Enter the commands to deploy the model. Use comma to separate.", className="mr-2"),
                 dbc.Input(id="cmd-regist", type="text", placeholder="Enter commands to deploy the model", debounce=True),
             ],
-            className="mr-3",
-        ),
-    ],
-)
-
-
-MODEL_REGISTRY = html.Div([
-    form_regist,
+            className="mr-3"
+        )
+    ]),
     dbc.Card([
         dbc.Label('Choose Model Type', className='mr-2'),
         dbc.RadioItems(
@@ -159,15 +181,27 @@ MODEL_REGISTRY = html.Div([
         n_clicks=0,
     ),
     dbc.Button(
-        "See GUI Component(s)",
+        "Double-click to See GUI Component(s)",
         id="gui-check",
         className="mr-1",
         color="success",
         size="sm",
-        style={'width':'40%'},
+        style={'width':'55%'},
         n_clicks=0,
     ),
     html.Div(id='dynamic-gui-container', children=[]),
+])
+
+WORKFLOW_REGISTRY = html.Div([
+    dbc.Form([
+        dbc.FormGroup(
+            [   dbc.Label("Enter the app dependencies (content_ids in APP table) for the workflow. Use comma to separate each app ids. \
+                           Use semicolon to separate ids that can be executed in parallel.", className="mr-2"),
+                dbc.Input(id="workflow-dependencies", type="text", placeholder="Enter app dependencies", debounce=True),
+            ],
+            className="mr-3"
+        )
+    ])
 ])
 
 register_model = dbc.Card(
@@ -177,46 +211,44 @@ register_model = dbc.Card(
         [
             html.Div([
                 html.Div([
+                    #dbc.Label('1.'),
                     dbc.Button(
-                    "Register New Content",
-                    id="button-register",
-                    className="mr-1",
-                    color="success",
-                    size="sm",
-                    n_clicks=0,
-                    style={'width':'40%'}
+                        "Generate New Content",
+                        id="generate-json",
+                        className="mr-1",
+                        color="success",
+                        size="sm",
+                        style={'width':'40%', 'margin': '10px', 'margin-left': '15px'}
                     ),
-                    dbc.Button(
-                    "Update Existing Content",
-                    id="button-update",
-                    className="mr-1",
-                    color="warning",
-                    size="sm",
-                    n_clicks=0,
-                    style={'width':'40%'})
+                    dbc.Label('after filling out the forms below. Then,'),
                     ],
                     className='row',
-                    style={'align-items': 'center', 'justify-content': 'center'}
+                    style={'align-items': 'center', 'justify-content': 'left'}
                 ),
-                html.Hr(),
                 html.Div(
                     [
+                        #dbc.Label('2.'),
                         dbc.Button(
-                            "Generate Content Document",
-                            id="generate-json",
-                            className="mr-2",
+                            "Register New Content",
+                            id="button-register",
+                            className="mr-1",
                             color="success",
                             size="sm",
-                            style={'width':'40%'}
+                            n_clicks=0,
+                            style={'width':'40%', 'margin-left': '15px', 'margin-right': '15px'}
                         ),
+                        dbc.Label('or'),
                         html.Div([
                             html.Button("Download Content Document", id="btn-download-txt"),
                             dcc.Download(id="download-text")
-                        ]),
+                            ],
+                            style={'width':'45%', 'margin-left': '15px'}
+                        ),
                     ],
                     className='row',
-                    style={'align-items': 'center', 'justify-content': 'center', 'margin-bottom': '20px'}
+                    style={'align-items': 'center', 'justify-content': 'left', 'margin-bottom': '20px'}
                 ),
+                html.Hr(),
                 html.Div(
                     [
                         dbc.RadioItems(
@@ -234,18 +266,46 @@ register_model = dbc.Card(
                             value="model")
                     ],
                     className="radio-group",
-                    style ={'margin-bottom': '10px'},
-                ),
-                #MODEL_REGISTRY,
-                ],
+                    style ={'justify-content': 'center', 'margin-bottom': '10px'},
+                )],
                 style={'align-items': 'center', 'justify-content': 'center', 'margin-bottom': '20px'},   
             ),
-            html.Div(id='tab-display', children=MODEL_REGISTRY)
+            html.Div(id='tab-display', children=dbc.Form(children=dash_forms('model'))),
+            dbc.Collapse(
+                MODEL_REGISTRY,
+                id="collapse-model-tab",
+                is_open=False,
+            ),
+            dbc.Collapse(
+                WORKFLOW_REGISTRY,
+                id="collapse-workflow-tab",
+                is_open=False,
+            ),
         ],
         ),
     ]
 )
 
+
+data_uploader = dcc.Upload(
+    id='upload-data',
+    children=html.Div([
+        'Drag and Drop or ',
+        html.A('Select Files')
+    ]),
+    style={
+        'width': '95%',
+        'height': '60px',
+        'lineHeight': '60px',
+        'borderWidth': '1px',
+        'borderStyle': 'dashed',
+        'borderRadius': '5px',
+        'textAlign': 'center',
+        'margin': '10px'
+    },
+    # Not allow multiple files to be uploaded
+    multiple=False,
+)
 
 
 upload_model = dbc.Card(
@@ -256,72 +316,40 @@ upload_model = dbc.Card(
                 [
                     html.Div(
                         [
+                            dbc.Label("Please upload your content document after validation."),
                             dbc.Button(
                                  "Validate Content Document",
                                 id="button-validate",
                                 className="mr-2",
                                 color="success",
                                 size="sm",
-                                style={'width':'40%'}
+                                style={'width':'40%', 'margin-top': '10px'}
                             ),
                             dbc.Button(
                                 "Upload Content Document",
                                 id="button-upload",
                                 color="success",
                                 size="sm",
-                                style={'width':'40%'}
+                                style={'width':'40%', 'margin-top': '10px'}
                             ),
                         ],
                         className='row',
-                        style={'align-items': 'center', 'justify-content': 'center'}
+                        style={'align-items': 'center', 'justify-content': 'center', 'margin-bottom': '20px'}
                     ),
-                    html.Hr(),
-                    dbc.CardBody("Please upload your content document after validation."),
                     html.Div(id='output-json-validation'),
-                    dbc.Card(
-                        [
-                            html.Div([
-                                        dcc.Upload(
-                                            id='upload-data',
-                                            children=html.Div([
-                                                'Drag and Drop or ',
-                                                html.A('Select Files')
-                                            ]),
-                                            style={
-                                                'width': '95%',
-                                                'height': '60px',
-                                                'lineHeight': '60px',
-                                                'borderWidth': '1px',
-                                                'borderStyle': 'dashed',
-                                                'borderRadius': '5px',
-                                                'textAlign': 'center',
-                                                'margin': '10px'
-                                            },
-                                            # Not allow multiple files to be uploaded
-                                            multiple=False,
-                                        ),
-                                        html.Div(id='output-data-upload'),
-                                    ]),
-                        ],
-                    ),
+                    dbc.Card([
+                        html.Div(id='data-uploader', children = data_uploader),
+                        html.Div(id='output-data-upload'),
+                    ]),
                 ],
             ),
-            html.Hr(),
-            dbc.Card(
-            [
-                #dbc.CardHeader("GUI layout"),
-                html.H5("GUI Layout", className="card-title"),
-                html.Div(id='gui-layout',
-                        children=[]
-                ),
-            ])
+            html.Div(id='gui-layout', children=[])
         ])
     ]
 )
 
 
 #-------------------------------------------------------------------------------------
-params = ['model_name', 'version', 'user', 'type', 'uri','description']
 table_models = dbc.Card(
     id = "table-models",
     children = [
@@ -361,7 +389,7 @@ table_models = dbc.Card(
                 children = [
                 dash_table.DataTable(
                     id='table-model-list',
-                    columns=([{'id': p, 'name': p} for p in params]),
+                    columns=[{'id': p, 'name': p} for p in MODEL_KEYS],
                     data=model_list,
                     row_selectable='multi',
                     editable=False,
@@ -381,10 +409,10 @@ meta = [
     html.Div(
         id="no-display",
         children=[   
-            dcc.Store(id="json-store", data=FILE_TEMPLATE.copy()),
+            dcc.Store(id="json-store", data=MODEL_TEMPLATE.copy()),
             dcc.Store(id="nothing", data=''),
             dcc.Store(id="table-contents-cache", data=[]),
-            dcc.Store(id='validation', data=0),
+            dcc.Store(id='validation', data=0)
         ],
     ),
 ]

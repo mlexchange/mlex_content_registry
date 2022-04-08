@@ -5,7 +5,11 @@
   "description": "A schema for defining models to store at MLExchange content registry",
   "type": "object",
   "properties": {
-    "model_name": {
+    "content_type": {
+      "description": "content is model",
+      "type": "string"
+    },
+    "name": {
       "description": "model name",
       "type": "string"
     },
@@ -15,10 +19,6 @@
     },
     "type": {
       "description": "model type (supervised or unsupervised)",
-      "type": "string"
-    },
-    "user": {
-      "description": "user name of the model",
       "type": "string"
     },
     "uri": {
@@ -86,10 +86,10 @@
     }
   },
   "required": [
-    "model_name",
+    "content_type",
+    "name",
     "version",
     "type",
-    "user",
     "uri",
     "application",
     "gui_parameters",

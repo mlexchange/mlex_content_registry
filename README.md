@@ -1,10 +1,15 @@
 # MLExchange Content Registry
 Content registry and its API for the MLExchange platform.
+The architecture looks like below.
+
+![image info](./assets/content_registry_v2.png)
 
 Contents include:  
 	- models  
 	- apps  
 	- workflows  
+	- assets (metadata, e.g., tags, trained models etc.) 
+	- 
 
 ## How to use
 **Running content registry**   
@@ -17,10 +22,10 @@ Scroll down to the bottom of the page, click on **Refresh** button.
 Select contents from the table and click **Delete** button.
 
 **Modify existing contents**  
-Currently, the **Modify** button is restricted to limited information items. 
-Therefore, the easiest way to modify an existing registration is to delete the content, then upload the changed JSON document again (drag and drop, click **Validate** button first, then click the **Upload** button).
+Currently, the **Modify** button is deprecated. 
+Therefore, the easiest way to modify an existing registration is to delete the content, then either register a new content by filling out the forms or upload the revised JSON document again (drag and drop, click **Validate** button first, then click the **Upload** button).
 
-## APIs
+## API calls
 get\_models()  
 get\_model(uid) 
 

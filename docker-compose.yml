@@ -7,6 +7,8 @@ services:
     build:
       context: "content-api/"
       dockerfile: "docker/Dockerfile"
+    volumes:
+      - ./content-api/src:/app/api/src
     expose:
       - "8000"
     ports:
