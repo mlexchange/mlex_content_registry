@@ -248,6 +248,17 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                             component_combo[input_type] = input_value
                     else:
                         print('No value is found in the input form yet')
+
+                if component_combo["type"] == "int" and "value" in component_combo:
+                    component_combo["value"] = int(component_combo["value"])
+                elif component_combo["type"] == "float" and "value" in component_combo:
+                    component_combo["value"] = float(component_combo["value"])
+                elif component_combo["type"] == "bool" and "value" in component_combo:
+                    if component_combo["value"].lower() == 'true':
+                        component_combo["value"] = True
+                    else:
+                        component_combo["value"] = False
+
                 json_document["gui_parameters"].append(component_combo)
         else:
             if json_document['content_type'] == 'model':
