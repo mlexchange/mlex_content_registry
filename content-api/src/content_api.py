@@ -54,6 +54,16 @@ app = FastAPI(  openapi_url ="/api/lbl-mlexchange/openapi.json",
 # print(output)
 
 
+#------------------ content ----------------------
+@app.get(API_URL_PREFIX+"/contents/{uid}/content", tags=['content'])
+def get_content(uid: str):
+    found = None
+    for coll in ['models', 'apps', 'workflows', 'assets']:
+        found = conn_mongodb(coll).find_one({"content_id": uid})
+        if bool(found):
+            break
+    return found
+
 
 #------------------ models ----------------------
 #url = 'http://localhost:8000/api/v0/models'
