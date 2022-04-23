@@ -25,10 +25,19 @@ def conn_mongodb(collection='models'):
 
 def get_content_list(collection='models'):
     sort_key = 'content_id'
-    if collection == 'models':
-        sort_key = 'model_name'
     mycollection = conn_mongodb(collection)
-    return list(mycollection.find({}).collation({'locale':'en'}).sort(sort_key, pymongo.ASCENDING))
+    return list(mycollection.find({}).collation({'locale':'en'}).sort("name", pymongo.ASCENDING))
+
+
+def get_dropdown_options(collection='models'):
+    contents = get_content_list(collection)
+    content_labels = []
+    content_values = []
+    for content in contents:
+        content_labels.append(content["name"]+ "  "+content["version"])
+        content_values.append(content["content_id"])
+    options = [{'label': item[0], 'value': item[1]} for item in zip(content_labels,content_values)]
+    return options
 
 
 def get_schema(type):
@@ -61,7 +70,7 @@ def is_duplicate(dict_list,name_str):
     """
     found = False
     for i,item in enumerate(dict_list):
-        if item["model_name"] == name_str:
+        if item["name"] == name_str:
             found = True
             _id = item["_id"]
             uri    = item["uri"]
@@ -84,7 +93,7 @@ def update_mongodb(name, uri, description):
             _id = str(uuid.uuid4())
             content_id = str(uuid.uuid4())
             mycollection = conn_mongodb()
-            mycollection.insert_one({"_id": _id, "content_id": content_id, "model_name": name, "uri": uri,"description": description})
+            mycollection.insert_one({"_id": _id, "content_id": content_id, "name": name, "uri": uri,"description": description})
             print(f"add new model name: {name}")
         else:
             if uri != "" and uri is not None:
