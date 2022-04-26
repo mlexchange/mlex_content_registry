@@ -26,8 +26,6 @@ from app_layout import app, data_uploader, dash_forms, MODEL_TEMPLATE, APP_TEMPL
                        MODEL_KEYS, APP_KEYS, WORKFLOW_KEYS, OWNER
 
 
-
-
 #----------------------------------- callback reactives ------------------------------------
 @app.callback(
     Output("table-model-list", "data"),
@@ -73,6 +71,8 @@ def update_layout(tab_value):
         return dash_forms('app'), 'Refresh App List', False, True, False, [{'id': p, 'name': p} for p in APP_KEYS]
     elif tab_value == 'workflow':
         return dash_forms('workflow'), 'Refresh Workflow List', False, False, True, [{'id': p, 'name': p} for p in WORKFLOW_KEYS]
+#     elif tab_value == 'resource':
+#         return dash_forms('model'), 'Refresh Resources List', False, False, False, []
 
 
 @app.callback( 
@@ -447,6 +447,15 @@ def download_model(n_clicks, data):
     filename = data["name"] + "_v" + data["version"]
     return dict(content=json.dumps(data), filename="{}.json".format(filename))
 
+
+#---------------------------------- launch jobs ------------------------------------------
+@app.callback(
+    Output("dummy", "data"),
+    Input("button-launch", "n_clicks"),
+    prevent_initial_call=True,
+)
+def launch_jobs(n_clicks):
+    return ''
 
 
 if __name__ == '__main__':
