@@ -293,6 +293,7 @@ register_model = dbc.Card(
                                 {"label": "Model", "value": "model"},
                                 {"label": "App", "value": "app"},
                                 {"label": "Workflow", "value": "workflow"},
+                                # {"label": "Resource", "value": "resource"}
                             ],
                             value="model")
                     ],
@@ -494,8 +495,9 @@ meta = [
         children=[   
             dcc.Store(id="json-store", data=MODEL_TEMPLATE.copy()),
             dcc.Store(id="nothing", data=''),
+            dcc.Store(id="dummy", data=''),
             dcc.Store(id="table-contents-cache", data=[]),
-            dcc.Store(id='validation', data=0)
+            dcc.Store(id='validation', data=0),
         ],
     ),
 ]
