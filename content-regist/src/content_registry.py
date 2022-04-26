@@ -452,9 +452,33 @@ def download_model(n_clicks, data):
 @app.callback(
     Output("dummy", "data"),
     Input("button-launch", "n_clicks"),
+    State('table-model-list', 'selected_rows'),
+    State("table-contents-cache", "data"),
     prevent_initial_call=True,
 )
-def launch_jobs(n_clicks):
+def launch_jobs(n_clicks, row, data):
+    workflow_content = data[row]
+    job0 = {
+        'mlex_app': 'kmeans',
+        'service_type': 'backend',
+        'job_kwargs': {'uri': 'mlexchange/k-means-dc', 'cmd': 'sleep 30'},
+        'working_directory': '',
+    }
+    job1 = {
+        'mlex_app': 'random_forest',
+        'service_type': 'backend',
+        'job_kwargs': {'uri': 'mlexchange/random-forest-dc', 'cmd': 'sleep 30'},
+        'working_directory': '',
+    }
+    compute_dict = {'user_uid': '001',
+                    'host_list': ['vaughan.als.lbl.gov'],
+                    'requirements': {'num_processors': 2,
+                                     'num_gpus': 0,
+                                     'num_nodes': 2},
+                    'job_list': [job0, job1],
+                    'dependencies': {'0': [],
+                                     '1': []}
+    }
     return ''
 
 
