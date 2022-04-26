@@ -117,6 +117,41 @@ def remove_key_from_dict_list(data, key):
     return new_data 
 
 
+def get_content(uid: str):
+    url = 'http://content-api:8000/api/v0/contents/{}/content'.format(uid)  # current host, could be inside the docker
+    response = requests.get(url).json()
+    return response
+
+def workflow_dependency(workflow):
+    workflow_list = workflow['workflow_list']
+    dependency = {}
+    if workflow['workflow_type'] == 'serial':
+        for i,work_id in enumerate(workflow_list):
+            dependency[work_id] = []
+            for j in range(len(workflow_list)):
+                if j > i:
+                    dependency[work_id].append(workflow_list[j])
+    
+    elif workflow['workflow_type'] == 'parallel':
+        for work_id in workflow_list:
+            dependency[work_id] = []
+                
+    return workflow_list, dependency
+
+
+# def construct_dependency(uid: str):
+#     content = get_content(uid)
+#     job_list = []
+#     dependencies = {}
+#     if content['content_typ'] == 'workflow':
+#         workflow_list, workflow_dependency_list = workflow_dependency(content)
+#         for workflow_id in workflow_list:
+#             if workflow_id not in job_list:
+#                 job_list.append(workflow_id)
+#                 dependencies[workflow_id] = []
+#             dependencies[workflow_id].extend(workflow_dependency_list)
+
+
 
 
 
