@@ -466,9 +466,9 @@ def launch_jobs(n_clicks, row, data):
     for i,job_id in enumerate(workflow_list):
         data = get_content(job_id)
         job_content['mlex_app'] = data['name']
-        job_content['service_type'] = data['service_tyoe']
+        job_content['service_type'] = data['service_type']
         job_content['working_directory'] = ''
-        job_content['job_kwargs'] = {'uri': data['uri'], 'cmd': data['cmd']}
+        job_content['job_kwargs'] = {'uri': data['uri'], 'cmd': data['cmd'][0]}
         job_list.append(job_content)
         dependency[str(i)] = [] 
 
@@ -480,6 +480,7 @@ def launch_jobs(n_clicks, row, data):
                     'job_list': job_list,
                     'dependencies': dependency}
 
+    print(f'compute dict {compute_dict}')
     response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
     return ''
 
