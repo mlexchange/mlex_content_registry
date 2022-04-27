@@ -13,6 +13,8 @@ services:
       - "8000"
     ports:
       - "8000:8000"
+    networks:
+      - content_registry_network
       
   content-registry:
     restart: "unless-stopped"
@@ -28,6 +30,9 @@ services:
       - ./content-regist/src:/app/content-regist/src
     ports:
       - "8051:8051"
+    networks:
+      - content_registry_network
+      - computing_api_default
 
 volumes: 
   data-m:
@@ -36,3 +41,10 @@ volumes:
       type: "none"
       device: "${PWD}/dash-regist/data/"
       o: "bind"
+
+networks:
+  computing_api_default:
+    external: true
+  content_registry_network:
+    driver: bridge
+
