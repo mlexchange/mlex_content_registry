@@ -13,9 +13,10 @@ import pymongo
 import uuid
 import json
 import base64
+import requests
 
 from utility import conn_mongodb, get_content_list, get_dropdown_options, get_schema, validate_json, \
-                    is_duplicate, update_mongodb, remove_key_from_dict_list
+                    is_duplicate, update_mongodb, remove_key_from_dict_list, get_content
 from generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
                       make_form_bool, make_form_graph
 
@@ -457,34 +458,34 @@ def download_model(n_clicks, data):
     prevent_initial_call=True,
 )
 def launch_jobs(n_clicks, row, data):
-    workflow_content = data[row]
-    job0 = {
-        'mlex_app': 'kmeans',
-        'service_type': 'backend',
-        'job_kwargs': {'uri': 'mlexchange/k-means-dc', 'cmd': 'sleep 30'},
-        'working_directory': '',
-    }
-    job1 = {
-        'mlex_app': 'random_forest',
-        'service_type': 'backend',
-        'job_kwargs': {'uri': 'mlexchange/random-forest-dc', 'cmd': 'sleep 30'},
-        'working_directory': '',
-    }
+    workflow_content = data[row[0]]
+    job_list = []
+    job_content = {}
+    dependency = {}
+    workflow_list = workflow_content['workflow_list']
+    for i,job_id in enumerate(workflow_list):
+        data = get_content(job_id)
+        job_content['mlex_app'] = data['name']
+        job_content['service_type'] = data['service_tyoe']
+        job_content['working_directory'] = ''
+        job_content['job_kwargs'] = {'uri': data['uri'], 'cmd': data['cmd']}
+        job_list.append(job_content)
+        dependency[str(i)] = [] 
+
     compute_dict = {'user_uid': '001',
                     'host_list': ['vaughan.als.lbl.gov'],
                     'requirements': {'num_processors': 2,
                                      'num_gpus': 0,
                                      'num_nodes': 2},
-                    'job_list': [job0, job1],
-                    'dependencies': {'0': [],
-                                     '1': []}
-    }
+                    'job_list': job_list,
+                    'dependencies': dependency}
+
+    response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
     return ''
 
 
 if __name__ == '__main__':
     app.run_server(host='0.0.0.0', port=8051, debug=True)
     print("model registry is up running!")
-
 
 
