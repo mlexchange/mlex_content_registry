@@ -55,6 +55,17 @@ def toggle_modal(n1, n2, is_open):
     return is_open
 
 
+@app.callback(
+    Output("collapse-app-port", "is_open"),
+    Input("app-type", "value")
+)
+def toggle_app_port_inputform(app_type):
+    if app_type == 'frontend':
+        return True
+    else:
+        return False
+
+
 # might need collapse to handle id not found issues
 @app.callback( 
     Output("tab-display", "children"),
@@ -221,6 +232,7 @@ def options_for_workflow_dropdown(value):
     Input("generate-json", "n_clicks"),
     Input("gui-check", "n_clicks"),
     Input('upload-data', 'contents'),
+    State('app-port', 'value'),
     State('upload-data', 'filename'),
     State('upload-data', 'last_modified'),
 
@@ -229,7 +241,7 @@ def options_for_workflow_dropdown(value):
 def json_generator(content_type, component_type, name, version, model_type, uri, reference, \
                    description, applications, access_type, service_type, app_cpu_num, \
                    app_gpu_num, model_cpu_num, model_gpu_num, cmds, workflow_type, \
-                   workflow_children, children, n1, n2, upload_content, file_name, file_date):
+                   workflow_children, children, n1, n2, upload_content, ports, file_name, file_date):
     
     
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
@@ -327,6 +339,14 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                 for child in workflow_children:
                     workflow_list.append(child['props']['children'][1]['props']['children'][1]['props']['value'])
                 json_document["workflow_list"] = workflow_list
+                
+        if content_type == 'app':
+            if json_document["service_type"] == 'frontend' and bool(ports):
+                json_document["port"] = []
+                ports = ports.split(",")
+                for port in ports:
+                    if int(port) not in json_document["port"]:
+                        json_document["port"].append(int(port))
             
     if 'upload-data' in changed_id:
         json_document = {}
@@ -456,7 +476,11 @@ def job_content_dict(content):
                    'working_directory': '',
                    'job_kwargs': {'uri': content['uri'], 'cmd': content['cmd'][0]}
     }
+    if 'port' in content:
+        job_content['job_kwargs']['port'] = content['port']
+    
     return job_content
+
 
 @app.callback(
     Output("dummy", "data"),
