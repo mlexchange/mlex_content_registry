@@ -15,8 +15,8 @@ try:
 except Exception:
     print("Unable to connect to the server.")
 
-MODEL_KEYS    = ['name', 'version', 'owner', 'type', 'uri','description']
-APP_KEYS      = ['name', 'version', 'owner', 'content_id', 'uri','description']
+MODEL_KEYS    = ['name', 'version', 'owner', 'type', 'uri', 'description']
+APP_KEYS      = ['name', 'version', 'owner', 'uri', 'description']
 WORKFLOW_KEYS = ['name', 'version', 'owner', 'workflow_type', 'description']
 
 OWNER = 'mlexchange team'
@@ -231,6 +231,16 @@ APP_REGISTRY = html.Div([
           labelStyle={'margin': '6px'}
       ),
     ]),
+    dbc.Collapse(
+        children=dbc.FormGroup(
+            [
+                dbc.Label("Please input port number for the frontend app. Use comma to separate if there are more than one."),
+                dbc.Input(id="app-port", type="text", placeholder="Enter port number.", debounce=True),
+            ],
+        ),
+        id="collapse-app-port",
+        is_open=False,
+    ),
     dbc.FormGroup(
             [   dbc.Label("Resources requirement", className="mr-2"),
                 html.Div([
