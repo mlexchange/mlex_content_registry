@@ -2,9 +2,13 @@ import os
 import configparser
 import uuid
 import pymongo
+import urllib.request
+import json
 from copy import deepcopy
-from typing import Optional
+from typing import List, Optional
 from fastapi import FastAPI
+import requests
+from pydantic import BaseModel, ValidationError
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
@@ -19,11 +23,12 @@ def conn_mongodb(collection='models'):
     return db[collection]
     
 mycollection = conn_mongodb()
-model_list = list(mycollection.find({}).sort("model_name",pymongo.ASCENDING))
+model_list = list(mycollection.find({}).sort("name",pymongo.ASCENDING))
 try:
     print(f"model list:\n{model_list}")
 except Exception:
     print("Unable to connect to the server.")
+
 
 
 API_URL_PREFIX = "/api/v0"
@@ -33,13 +38,40 @@ app = FastAPI(  openapi_url ="/api/lbl-mlexchange/openapi.json",
                 redoc_url   ="/api/lbl-mlexchange/redoc",
              )
 
+
+
+#token = requests.get('http://content-user:8001/token1').json()
+#print(f'token {token}')
+
+# results = requests.post("http://localhost:8001/token", 
+#                         data={"username" : "johndoe", 
+#                               "password" : "secret", 
+#                               "scope" : "me items"}).json()
+# 
+# headers = { "Authorization" : "Bearer " + results["access_token"]}
+# output = requests.get("http://localhost:8001/users/me/", headers=headers).json()
+# 
+# print(output)
+
+
+#------------------ content ----------------------
+@app.get(API_URL_PREFIX+"/contents/{uid}/content", tags=['content'])
+def get_content(uid: str):
+    found = None
+    for coll in ['models', 'apps', 'workflows', 'assets']:
+        found = conn_mongodb(coll).find_one({"content_id": uid})
+        if bool(found):
+            break
+    return found
+
+
 #------------------ models ----------------------
 #url = 'http://localhost:8000/api/v0/models'
 @app.get(API_URL_PREFIX+"/models", tags=['models'])
 def get_models():
     mycollection = conn_mongodb('models')
-    #model_list = list(mycollection.find({}).sort("model_name",pymongo.ASCENDING))
-    return list(mycollection.find({}).collation({'locale':'en'}).sort("model_name", pymongo.ASCENDING))
+    #model_list = list(mycollection.find({}).sort("name",pymongo.ASCENDING))
+    return list(mycollection.find({}).collation({'locale':'en'}).sort("name", pymongo.ASCENDING))
     
     
 @app.get(API_URL_PREFIX+"/models/{uid}/model", tags=['models', 'model'])
@@ -66,7 +98,7 @@ def get_group_gui_params(uid: str, comp_group: str):
 @app.get(API_URL_PREFIX+"/apps", tags=['apps'])
 def get_apps():
     mycollection = conn_mongodb('apps')
-    return list(mycollection.find({}).collation({'locale':'en'}).sort("model_name", pymongo.ASCENDING))
+    return list(mycollection.find({}).collation({'locale':'en'}).sort("name", pymongo.ASCENDING))
     
     
 @app.get(API_URL_PREFIX+"/apps/{uid}/app", tags=['apps', 'app'])
@@ -78,7 +110,7 @@ def get_app(uid: str):
 @app.get(API_URL_PREFIX+"/workflows", tags=['workflows'])
 async def get_workflows():
     mycollection = conn_mongodb('workflows')
-    return list(mycollection.find({}).collation({'locale':'en'}).sort("model_name", pymongo.ASCENDING))
+    return list(mycollection.find({}).collation({'locale':'en'}).sort("name", pymongo.ASCENDING))
 
 
 @app.get(API_URL_PREFIX+"/workflows/{uid}/workflow", tags=['workflows', 'workflow'])
@@ -89,44 +121,37 @@ def get_workflow(uid: str):
 
 #-------------------- assets -----------------------
 @app.post(API_URL_PREFIX+"/assets", tags=['assets'])
-def add_models(data: list):
-    for content in data:
-        content["_id"] = str(uuid.uuid4())
-        content["content_id"] = str(uuid.uuid4())
+def add_asset(content: dict):
+    """
+    Add a single asset.  
+      - Args: dict 
+    """
+    content["_id"] = str(uuid.uuid4())
+    content["content_id"] = str(uuid.uuid4())
     mycollection = conn_mongodb('assets')
-    return mycollection.insert_many(data)
-    
-    
-@app.post(API_URL_PREFIX+"/assets/{uid}/asset", tags=['assets', 'asset'])
-def add_model(uid: str, data: dict):
-    data["_id"] = str(uuid.uuid4())
-    data["content_id"] = str(uuid.uuid4())
-    mycollection = conn_mongodb('assets')
-    return mycollection.insert_one(data)
+    mycollection.insert_one(content)
+    return content["content_id"]
 
 
 @app.get(API_URL_PREFIX+"/assets", tags=['assets'])
-def get_workflows():
-    mycollection = conn_mongodb('assets', tags=['assets'])
-    return list(mycollection.find({}).collation({'locale':'en'}).sort("model_name", pymongo.ASCENDING))
+def get_assets():
+    mycollection = conn_mongodb('assets')
+    return list(mycollection.find({}).collation({'locale':'en'}).sort("name", pymongo.ASCENDING))
 
 
 @app.get(API_URL_PREFIX+"/assets/{uid}/asset", tags=['assets', 'asset'])
-def get_workflow(uid: str):
+def get_asset(uid: str):
     mycollection = conn_mongodb('assets')
     return mycollection.find_one({"content_id": uid})
 
 
 @app.delete(API_URL_PREFIX+"/assets", tags=['assets'])
-def delete_models(query):
+def delete_assets(uids: list):
+    """
+    Delete assets.  
+      - Args: a list of content_ids 
+    """
     mycollection = conn_mongodb('assets')
-    return mycollection.delete_many(query)
-    
-    
-@app.delete(API_URL_PREFIX+"/assets/{uid}/asset", tags=['assets', 'asset'])
-def delete_model(uid: str):
-    mycollection = conn_mongodb('assets')
-    return mycollection.delete_one({"content_id": uid})
-    
+    mycollection.delete_many({'content_id':{'$in':uids}})
     
     

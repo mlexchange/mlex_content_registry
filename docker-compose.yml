@@ -1,4 +1,4 @@
-version: "3.9"
+version: "3"
 
 services:
   content-api:
@@ -9,11 +9,11 @@ services:
       dockerfile: "docker/Dockerfile"
     volumes:
       - ./content-api/src:/app/api/src
-    expose:
-      - "8000"
     ports:
       - "8000:8000"
-      
+    networks:
+      - content_registry_network
+
   content-registry:
     restart: "unless-stopped"
     container_name: "content-registry"
@@ -28,6 +28,9 @@ services:
       - ./content-regist/src:/app/content-regist/src
     ports:
       - "8051:8051"
+    networks:
+      - content_registry_network
+      - computing_api_default
 
 volumes: 
   data-m:
@@ -36,3 +39,11 @@ volumes:
       type: "none"
       device: "${PWD}/dash-regist/data/"
       o: "bind"
+
+networks:
+  content_registry_network:
+    driver: bridge
+  computing_api_default:
+    external: true
+
+

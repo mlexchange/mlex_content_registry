@@ -6,15 +6,17 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_html_components as html
 import dash_core_components as dcc
+import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State, MATCH, ALL
 
 import pymongo
 import uuid
 import json
 import base64
+import requests
 
-from utility import conn_mongodb, get_content_list, get_schema, validate_json, is_duplicate, \
-                    update_mongodb, remove_key_from_dict_list
+from utility import conn_mongodb, get_content_list, get_dropdown_options, get_schema, validate_json, \
+                    is_duplicate, update_mongodb, remove_key_from_dict_list, get_content
 from generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
                       make_form_bool, make_form_graph
 
@@ -58,17 +60,20 @@ def toggle_modal(n1, n2, is_open):
     Output("tab-display", "children"),
     Output("button-refresh", "children"),
     Output("collapse-model-tab", "is_open"),
+    Output("collapse-app-tab", "is_open"),
     Output("collapse-workflow-tab", "is_open"),
     Output("table-model-list", "columns"),
     Input("tab-group","value")
     )
 def update_layout(tab_value):
     if tab_value == 'model':
-        return dash_forms('model'), 'Refresh Model List', True, False, [{'id': p, 'name': p} for p in MODEL_KEYS]
+        return dash_forms('model'), 'Refresh Model List', True, False, False, [{'id': p, 'name': p} for p in MODEL_KEYS]
     elif tab_value == 'app':
-        return dash_forms('app'), 'Refresh App List', False, False, [{'id': p, 'name': p} for p in APP_KEYS]
+        return dash_forms('app'), 'Refresh App List', False, True, False, [{'id': p, 'name': p} for p in APP_KEYS]
     elif tab_value == 'workflow':
-        return dash_forms('workflow'), 'Refresh Workflow List', False, True, [{'id': p, 'name': p} for p in WORKFLOW_KEYS]
+        return dash_forms('workflow'), 'Refresh Workflow List', False, False, True, [{'id': p, 'name': p} for p in WORKFLOW_KEYS]
+#     elif tab_value == 'resource':
+#         return dash_forms('model'), 'Refresh Resources List', False, False, False, []
 
 
 @app.callback( 
@@ -145,6 +150,53 @@ def display_output(value, n_cliks):
 
 
 @app.callback(
+    Output('workflow-gui-container', 'children'),
+    Input('workflow-group-add', 'n_clicks'),
+    State('workflow-gui-container', 'children'))
+def display_component(n_clicks, children):
+    new_element = html.Div([
+        dbc.Label("Choose a content by type:"),
+        html.Div([
+            dcc.Dropdown(
+                id={
+                    'type': 'content-type-dropdown',
+                    'index': n_clicks
+                },
+                options=[{'label': i, 'value': i} for i in ['models', 'apps', 'workflows']],
+                style={'width':'80%'},
+                value='workflows',
+            ),
+            dcc.Dropdown(
+                id={
+                    'type': 'content-dropdown',
+                    'index': n_clicks
+                },
+                options=get_dropdown_options('workflows'),
+                style={'width':'100%'},
+            ),
+        ],
+        style = {'width': '100%', 'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px'},
+        ),
+        html.Div(
+            id={
+                'type': 'workflow-dynamic-output',
+                'index': n_clicks
+            }
+        )
+    ])
+    children.append(new_element)
+    return children
+
+
+@app.callback(
+    Output({'type': 'content-dropdown', 'index': MATCH}, 'options'),
+    Input({'type': 'content-type-dropdown', 'index': MATCH}, 'value')
+)
+def options_for_workflow_dropdown(value):
+    return get_dropdown_options(value)
+
+
+@app.callback(
     Output("json-store", "data"),
     Output("data-uploader", "children"),
     Input("tab-group","value"),
@@ -156,8 +208,15 @@ def display_output(value, n_cliks):
     Input("reference-regist", "value"),
     Input("description-regist", "value"),
     Input("application-regist", "value"),
+    Input("access-type", "value"),
+    Input("app-type", "value"),
+    Input("app-cpu-num", "value"),
+    Input("app-gpu-num", "value"),
+    Input("model-cpu-num", "value"),
+    Input("model-gpu-num", "value"),
     Input("cmd-regist", "value"),
-    Input("workflow-dependencies", "value"),
+    Input("workflow-execution-type", "value"),
+    Input("workflow-gui-container", "children"),
     Input("dynamic-gui-container", "children"),
     Input("generate-json", "n_clicks"),
     Input("gui-check", "n_clicks"),
@@ -167,9 +226,10 @@ def display_output(value, n_cliks):
 
     prevent_initial_call=True
     )
-def json_generator(content_type, component_type, name, version, model_type, uri, \
-                   reference, description, applications, cmds, dependencies, children, n1, n2, \
-                   upload_content, file_name, file_date):
+def json_generator(content_type, component_type, name, version, model_type, uri, reference, \
+                   description, applications, access_type, service_type, app_cpu_num, \
+                   app_gpu_num, model_cpu_num, model_gpu_num, cmds, workflow_type, \
+                   workflow_children, children, n1, n2, upload_content, file_name, file_date):
     
     
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
@@ -188,8 +248,8 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
     
     if 'generate-json' in changed_id or \
        'gui-check' in changed_id:
-        keys = ["name","version","type","uri","reference", "description"]
-        items = [name, version, model_type, uri, reference, description]
+        keys = ["name","version","type","uri","reference", "description", "public", "service_type"]
+        items = [name, version, model_type, uri, reference, description, access_type, service_type]
         for item,key in zip(items,keys):
             if key in json_document and bool(item):
                 json_document[key] = item
@@ -200,59 +260,74 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                 if application not in json_document["application"]:
                     json_document["application"].append(application)
         
-        if 'cmd' in json_document and bool(cmds):
+        if "compute_resources" in json_document:
+            if content_type == 'model':
+                json_document["compute_resources"] = {"num_processors": model_cpu_num,
+                                                      "num_gpus": model_gpu_num}
+            else:
+                json_document["compute_resources"] = {"num_processors": app_cpu_num,
+                                                      "num_gpus": app_gpu_num}
+        
+        if "cmd" in json_document and bool(cmds):
             cmds = cmds.split(",")
             for cmd in cmds:
                 if cmd not in json_document["cmd"]:
                     json_document["cmd"].append(cmd)
-                    
-        if "dependency" in json_document and bool(dependencies):
-            workflow_dependencies = []
-            apps = dependencies.split(',')
-            for app in apps:
-                parallel_apps = app.split(';')
-                if len(parallel_apps) == 1:
-                    workflow_dependencies.append(app)
-                else:
-                    para_apps = []
-                    for item in parallel_apps:
-                        para_apps.append(item)
-                    workflow_dependencies.append(para_apps)
-            json_document['dependency'] = workflow_dependencies
         
-        if children[0]['props']['children'][2]['props']['children'] is not None and bool(component_type):
-            for k,child in enumerate(children):
-                input_items = child['props']['children'][2]['props']['children']['props']['children'][1]['props']['children']
-                length = len(input_items)
-                component_combo = {"type":component_type[k]}
-                for input_item in input_items:
-                    if 'value' in input_item['props']:
-                        input_type  = input_item["props"]["id"]["subtype"]
-                        input_value = input_item["props"]["value"]
-                        if input_type == 'marks':
-                            marks = {}
-                            input_value = input_value.split(",")
-                            length = len(input_value)
-                            for l in range(int(length/2)):
-                                marks[input_value[2*l]] = input_value[2*l+1]
-                            component_combo[input_type] = marks 
+        if content_type == 'model':
+            if children[0]['props']['children'][2]['props']['children'] is not None and bool(component_type):
+                for k,child in enumerate(children):
+                    input_items = child['props']['children'][2]['props']['children']['props']['children'][1]['props']['children']
+                    length = len(input_items)
+                    component_combo = {"type":component_type[k]}
+                    for input_item in input_items:
+                        if 'value' in input_item['props']:
+                            input_type  = input_item["props"]["id"]["subtype"]
+                            input_value = input_item["props"]["value"]
+                            if input_type == 'marks':
+                                marks = {}
+                                input_value = input_value.split(",")
+                                length = len(input_value)
+                                for l in range(int(length/2)):
+                                    marks[input_value[2*l]] = input_value[2*l+1]
+                                component_combo[input_type] = marks 
                 
-                        elif input_type == 'options':
-                            input_value = input_value.split(",")
-                            options = []
-                            length = len(input_value)
-                            for l in range(int(length/2)):
-                                options.append({"label":input_value[2*l], "value":input_value[2*l+1]})
-                            component_combo[input_type] = options
+                            elif input_type == 'options':
+                                input_value = input_value.split(",")
+                                options = []
+                                length = len(input_value)
+                                for l in range(int(length/2)):
+                                    options.append({"label":input_value[2*l], "value":input_value[2*l+1]})
+                                component_combo[input_type] = options
+                            else:
+                                component_combo[input_type] = input_value
                         else:
-                            component_combo[input_type] = input_value
-                    else:
-                        print('No value is found in the input form yet')
-                json_document["gui_parameters"].append(component_combo)
-        else:
-            if json_document['content_type'] == 'model':
+                            print('No value is found in the input form yet')
+
+                    if component_combo["type"] == "int" and "value" in component_combo:
+                        component_combo["value"] = int(component_combo["value"])
+                    elif component_combo["type"] == "float" and "value" in component_combo:
+                        component_combo["value"] = float(component_combo["value"])
+                    elif component_combo["type"] == "bool" and "value" in component_combo:
+                        if component_combo["value"].lower() == 'true':
+                            component_combo["value"] = True
+                        else:
+                            component_combo["value"] = False
+
+                    json_document["gui_parameters"].append(component_combo)
+            else:
                 print('No gui component is added!')
 
+        if content_type == 'workflow':
+            if bool(workflow_type):
+                json_document["workflow_type"] = workflow_type
+            
+            workflow_list = []
+            if workflow_children is not None:
+                for child in workflow_children:
+                    workflow_list.append(child['props']['children'][1]['props']['children'][1]['props']['value'])
+                json_document["workflow_list"] = workflow_list
+            
     if 'upload-data' in changed_id:
         json_document = {}
         if upload_content is not None:
@@ -260,6 +335,13 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
             json_document["_id"] = str(uuid.uuid4()) 
             json_document["content_id"] = str(uuid.uuid4())
             json_document["owner"] = OWNER
+            if "public" not in json_document:
+                json_document["public"] = False
+            
+            if "content_type" in json_document:
+                if json_document["content_type"] == "model":
+                    if "service_type" in json_document:
+                        json_document["service_type"] = "backend"
     
     return json_document, data_uploader
 
@@ -367,10 +449,43 @@ def download_model(n_clicks, data):
     return dict(content=json.dumps(data), filename="{}.json".format(filename))
 
 
+#---------------------------------- launch jobs ------------------------------------------
+@app.callback(
+    Output("dummy", "data"),
+    Input("button-launch", "n_clicks"),
+    State('table-model-list', 'selected_rows'),
+    State("table-contents-cache", "data"),
+    prevent_initial_call=True,
+)
+def launch_jobs(n_clicks, row, data):
+    workflow_content = data[row[0]]
+    job_list = []
+    dependency = {}
+    workflow_list = workflow_content['workflow_list']
+    for i,job_id in enumerate(workflow_list):
+        job_content = {}
+        data = get_content(job_id)
+        job_content['mlex_app'] = data['name']
+        job_content['service_type'] = data['service_type']
+        job_content['working_directory'] = ''
+        job_content['job_kwargs'] = {'uri': data['uri'], 'cmd': data['cmd'][0]}
+        job_list.append(job_content)
+        dependency[str(i)] = [] 
+
+    compute_dict = {'user_uid': '001',
+                    'host_list': ['vaughan.als.lbl.gov'],
+                    'requirements': {'num_processors': 2,
+                                     'num_gpus': 0,
+                                     'num_nodes': 2},
+                    'job_list': job_list,
+                    'dependencies': dependency}
+
+    response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
+    return ''
+
 
 if __name__ == '__main__':
     app.run_server(host='0.0.0.0', port=8051, debug=True)
     print("model registry is up running!")
-
 
 

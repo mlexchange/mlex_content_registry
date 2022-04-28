@@ -25,10 +25,19 @@ def conn_mongodb(collection='models'):
 
 def get_content_list(collection='models'):
     sort_key = 'content_id'
-    if collection == 'models':
-        sort_key = 'model_name'
     mycollection = conn_mongodb(collection)
-    return list(mycollection.find({}).collation({'locale':'en'}).sort(sort_key, pymongo.ASCENDING))
+    return list(mycollection.find({}).collation({'locale':'en'}).sort("name", pymongo.ASCENDING))
+
+
+def get_dropdown_options(collection='models'):
+    contents = get_content_list(collection)
+    content_labels = []
+    content_values = []
+    for content in contents:
+        content_labels.append(content["name"]+ "  "+content["version"])
+        content_values.append(content["content_id"])
+    options = [{'label': item[0], 'value': item[1]} for item in zip(content_labels,content_values)]
+    return options
 
 
 def get_schema(type):
@@ -61,7 +70,7 @@ def is_duplicate(dict_list,name_str):
     """
     found = False
     for i,item in enumerate(dict_list):
-        if item["model_name"] == name_str:
+        if item["name"] == name_str:
             found = True
             _id = item["_id"]
             uri    = item["uri"]
@@ -84,7 +93,7 @@ def update_mongodb(name, uri, description):
             _id = str(uuid.uuid4())
             content_id = str(uuid.uuid4())
             mycollection = conn_mongodb()
-            mycollection.insert_one({"_id": _id, "content_id": content_id, "model_name": name, "uri": uri,"description": description})
+            mycollection.insert_one({"_id": _id, "content_id": content_id, "name": name, "uri": uri,"description": description})
             print(f"add new model name: {name}")
         else:
             if uri != "" and uri is not None:
@@ -106,6 +115,41 @@ def remove_key_from_dict_list(data, key):
             new_data.append(item)
     
     return new_data 
+
+
+def get_content(uid: str):
+    url = 'http://content-api:8000/api/v0/contents/{}/content'.format(uid)  # current host, could be inside the docker
+    response = requests.get(url).json()
+    return response
+
+def workflow_dependency(workflow):
+    workflow_list = workflow['workflow_list']
+    dependency = {}
+    if workflow['workflow_type'] == 'serial':
+        for i,work_id in enumerate(workflow_list):
+            dependency[work_id] = []
+            for j in range(len(workflow_list)):
+                if j > i:
+                    dependency[work_id].append(workflow_list[j])
+    
+    elif workflow['workflow_type'] == 'parallel':
+        for work_id in workflow_list:
+            dependency[work_id] = []
+                
+    return workflow_list, dependency
+
+
+# def construct_dependency(uid: str):
+#     content = get_content(uid)
+#     job_list = []
+#     dependencies = {}
+#     if content['content_typ'] == 'workflow':
+#         workflow_list, workflow_dependency_list = workflow_dependency(content)
+#         for workflow_id in workflow_list:
+#             if workflow_id not in job_list:
+#                 job_list.append(workflow_id)
+#                 dependencies[workflow_id] = []
+#             dependencies[workflow_id].extend(workflow_dependency_list)
 
 
 

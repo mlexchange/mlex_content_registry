@@ -24,34 +24,45 @@ OWNER = 'mlexchange team'
 MODEL_TEMPLATE = {
     "content_type": "model",
     "name": "example",
+    "public": False,
     "version": "xxx",
     "type": "xxx",
     "owner": OWNER,
+    "service_type": "backend",
     "uri": "xxx",
     "application": [],
     "description": "xxx",
     "gui_parameters": [],
-    "cmd": []
+    "cmd": [],
+    "compute_resources": {'num_processors': 0,
+                          'num_gpus': 0}
 }
 
 APP_TEMPLATE = {
     "content_type": "app",
     "name": "example",
+    "public": False,
     "version": "xxx",
     "owner": OWNER,
+    "service_type": "frontend",
     "uri": "xxx",
     "application": [],
-    "description": "xxx"
+    "description": "xxx",
+    "cmd": [],
+    "compute_resources": {'num_processors': 0,
+                          'num_gpus': 0}
 }
 
 WORKFLOW_TEMPLATE = {
     "content_type": "workflow",
     "name": "example",
+    "public": False,
     "version": "xxx",
     "owner": OWNER,
     "uri": "xxx",
     "application": [],
-    "dependency": [],
+    "workflow_type": "serial",
+    "workflow_list": [],
     "description": "xxx",
 }
 
@@ -66,46 +77,51 @@ def dash_forms(type):
     forms = [
         dbc.FormGroup(
             [
-                dbc.Label("Please give a name for the {}.".format(type), className="mr-2"),
+                dbc.Label("Please give a name for the {}.".format(type)),
                 dbc.Input(id="name-regist", type="text", placeholder="Enter {} name.".format(type), debounce=True),
             ],
-            className="mr-3",
         ),
         dbc.FormGroup(
             [
-                dbc.Label("Please provide the version for the {}.".format(type), className="mr-2"),
+                dbc.Label("Please provide the version for the {}.".format(type) ),
                 dbc.Input(id="version-regist", type="text", placeholder="Enter {} version.".format(type), debounce=True),
             ],
-            className="mr-3",
         ),
         dbc.FormGroup(
             [
-                dbc.Label("Please provide the URI for the {}.".format(type), className="mr-2"),
+                dbc.Label("Please provide the URI for the {}.".format(type) ),
                 dbc.Input(id="uri-regist", type="text", placeholder="Enter the URI.", debounce=True),
             ],
-            className="mr-3",
         ),
         dbc.FormGroup(
             [
-                dbc.Label("Enter reference for the {}.".format(type), className="mr-2"),
+                dbc.Label("Enter reference for the {}.".format(type) ),
                 dbc.Input(id="reference-regist", type="text", placeholder="Enter reference.",debounce=True),
             ],
-            className="mr-3",
         ),
         dbc.FormGroup(
             [
-                dbc.Label("Enter description (optional) for the {}.".format(type), className="mr-2"),
+                dbc.Label("Enter description (optional) for the {}.".format(type) ),
                 dbc.Input(id="description-regist", type="text", placeholder="Enter description.",debounce=True),
             ],
-            className="mr-3",
         ),
         dbc.FormGroup(
             [
-                dbc.Label("Enter application(s) for the {} (e.g., image segmentation). Use comma to separate.".format(type), className="mr-2"),
+                dbc.Label("Enter application(s) for the {} (e.g., image segmentation). Use comma to separate.".format(type) ),
                 dbc.Input(id="application-regist", type="text", placeholder="Enter applications for this {}".format(type),debounce=True),
             ],
-            className="mr-3",
-        )
+        ),
+        dbc.FormGroup([
+            dbc.Label('Set Accessibility'),
+            dbc.RadioItems(
+                options=[{'label' : 'private', 'value': False},
+                         {'label': 'public', 'value': True}],
+                id = 'access-type',
+                value = False,
+                inline = True,
+                labelStyle={'margin': '6px'}
+            ),
+        ]),
     ]
     return forms
 
@@ -150,15 +166,7 @@ header= dbc.Navbar(
 
 
 MODEL_REGISTRY = html.Div([
-    dbc.Form([
-        dbc.FormGroup(
-            [   dbc.Label("Enter the commands to deploy the model. Use comma to separate.", className="mr-2"),
-                dbc.Input(id="cmd-regist", type="text", placeholder="Enter commands to deploy the model", debounce=True),
-            ],
-            className="mr-3"
-        )
-    ]),
-    dbc.Card([
+    dbc.FormGroup([
         dbc.Label('Choose Model Type', className='mr-2'),
         dbc.RadioItems(
             options=[
@@ -171,10 +179,28 @@ MODEL_REGISTRY = html.Div([
             labelStyle={'margin': '6px'}
         ),
     ]),
+    dbc.FormGroup(
+        [ dbc.Label("Enter the commands to deploy the model. Use comma to separate.", className="mr-2"),
+          dbc.Input(id="cmd-regist", type="text", placeholder="Enter commands to deploy the model", debounce=True),
+        ],
+    #className="mr-3"
+    ),
+    dbc.FormGroup(
+        [   dbc.Label("Resources requirement", className="mr-2"),
+            html.Div([
+                dbc.Label("CPU", className="mr-2"),
+                dbc.Input(id="model-cpu-num", type="number", value=0, className="mr-5"),
+                dbc.Label("GPU", className="mr-2"),
+                dbc.Input(id="model-gpu-num", type="number", value=0)
+              ],
+              style = {'width': '100%', 'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px'},
+            )
+        ]    
+    ),
     dbc.Button(
-        "Add GUI Component",
+        "+ Add GUI Component",
         id="gui-component-add",
-        className="mr-1",
+        className="mr-2",
         color="success",
         size="sm",
         style={'width':'40%'},
@@ -183,7 +209,7 @@ MODEL_REGISTRY = html.Div([
     dbc.Button(
         "Double-click to See GUI Component(s)",
         id="gui-check",
-        className="mr-1",
+        className="mr-2",
         color="success",
         size="sm",
         style={'width':'55%'},
@@ -192,16 +218,60 @@ MODEL_REGISTRY = html.Div([
     html.Div(id='dynamic-gui-container', children=[]),
 ])
 
+APP_REGISTRY = html.Div([
+    dbc.FormGroup([
+      dbc.Label('App Type'),
+      dbc.RadioItems(
+          options=[
+              {'label': 'frontend', 'value': 'frontend'},
+              {'label' : 'backend', 'value': 'backend'},
+          ],
+          id = 'app-type',
+          value = 'frontend',
+          inline = True,
+          labelStyle={'margin': '6px'}
+      ),
+    ]),
+    dbc.FormGroup(
+            [   dbc.Label("Resources requirement", className="mr-2"),
+                html.Div([
+                    dbc.Label("CPU", className="mr-2"),
+                    dbc.Input(id="app-cpu-num", type="number", placeholder="cpu number", value=0, className="mr-5"),
+                    dbc.Label("GPU", className="mr-2"),
+                    dbc.Input(id="app-gpu-num", type="number", placeholder="gpu number", value=0)
+                ],
+                style = {'width': '100%', 'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px'},
+              )
+            ]    
+      )
+])
+
 WORKFLOW_REGISTRY = html.Div([
-    dbc.Form([
-        dbc.FormGroup(
-            [   dbc.Label("Enter the app dependencies (content_ids in APP table) for the workflow. Use comma to separate each app ids. \
-                           Use semicolon to separate ids that can be executed in parallel.", className="mr-2"),
-                dbc.Input(id="workflow-dependencies", type="text", placeholder="Enter app dependencies", debounce=True),
+    dbc.FormGroup([
+        dbc.Label('Choose wrokflow execution'),
+        dbc.RadioItems(
+            options=[
+                {'label': 'serial', 'value': 'serial'},
+                {'label' : 'parallel', 'value': 'parallel'},
             ],
-            className="mr-3"
-        )
-    ])
+            id = 'workflow-execution-type',
+            value = 'serial',
+            inline = True,
+            labelStyle={'margin': '6px'}
+        ),
+    ]),
+    dbc.FormGroup([
+        dbc.Button(
+                "+ Add a Content to Form a Workflow",
+                id="workflow-group-add",
+                className="mr-2",
+                color="success",
+                size='sm',
+                style={'width':'100%'},
+                n_clicks=0,
+        ),
+        html.Div(id='workflow-gui-container', children=[]),
+    ]),
 ])
 
 register_model = dbc.Card(
@@ -210,6 +280,27 @@ register_model = dbc.Card(
         dbc.CardBody(
         [
             html.Div([
+                html.Div(
+                    [
+                        dbc.RadioItems(
+                            id="tab-group",
+                            className="btn-group",
+                            inputClassName="btn-check",
+                            labelClassName="btn btn-outline-primary",
+                            labelCheckedClassName="active",
+                            labelStyle={'font-size': '15px', 'width': '100px', 'margin':'10px'},
+                            options=[
+                                {"label": "Model", "value": "model"},
+                                {"label": "App", "value": "app"},
+                                {"label": "Workflow", "value": "workflow"},
+                                # {"label": "Resource", "value": "resource"}
+                            ],
+                            value="model")
+                    ],
+                    className="radio-group",
+                    style ={'display': 'flex', 'justify-content': 'center', 'margin': '10px'},
+                ),
+                html.Hr(),
                 html.Div([
                     #dbc.Label('1.'),
                     dbc.Button(
@@ -227,7 +318,6 @@ register_model = dbc.Card(
                 ),
                 html.Div(
                     [
-                        #dbc.Label('2.'),
                         dbc.Button(
                             "Register New Content",
                             id="button-register",
@@ -248,32 +338,18 @@ register_model = dbc.Card(
                     className='row',
                     style={'align-items': 'center', 'justify-content': 'left', 'margin-bottom': '20px'}
                 ),
-                html.Hr(),
-                html.Div(
-                    [
-                        dbc.RadioItems(
-                            id="tab-group",
-                            className="btn-group",
-                            inputClassName="btn-check",
-                            labelClassName="btn btn-outline-primary",
-                            labelCheckedClassName="active",
-                            labelStyle={'font-size': '15px', 'width': '100px', 'margin':'10px'},
-                            options=[
-                                {"label": "Model", "value": "model"},
-                                {"label": "App", "value": "app"},
-                                {"label": "Workflow", "value": "workflow"},
-                            ],
-                            value="model")
-                    ],
-                    className="radio-group",
-                    style ={'justify-content': 'center', 'margin-bottom': '10px'},
-                )],
+                ],
                 style={'align-items': 'center', 'justify-content': 'center', 'margin-bottom': '20px'},   
             ),
             html.Div(id='tab-display', children=dbc.Form(children=dash_forms('model'))),
             dbc.Collapse(
                 MODEL_REGISTRY,
                 id="collapse-model-tab",
+                is_open=False,
+            ),
+            dbc.Collapse(
+                APP_REGISTRY,
+                id="collapse-app-tab",
                 is_open=False,
             ),
             dbc.Collapse(
@@ -370,6 +446,14 @@ table_models = dbc.Card(
                 size="sm",
                 n_clicks=0,
             ),
+            dbc.Button(
+                "Launch the Selected",
+                id="button-launch",
+                className="mtb-2",
+                color="success",
+                size="sm",
+                n_clicks=0,
+            ),
             dbc.Modal(
                 [
                     dbc.ModalHeader("Warning"),
@@ -411,8 +495,9 @@ meta = [
         children=[   
             dcc.Store(id="json-store", data=MODEL_TEMPLATE.copy()),
             dcc.Store(id="nothing", data=''),
+            dcc.Store(id="dummy", data=''),
             dcc.Store(id="table-contents-cache", data=[]),
-            dcc.Store(id='validation', data=0)
+            dcc.Store(id='validation', data=0),
         ],
     ),
 ]
