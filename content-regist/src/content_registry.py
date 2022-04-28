@@ -450,44 +450,62 @@ def download_model(n_clicks, data):
 
 
 #---------------------------------- launch jobs ------------------------------------------
+def job_content_dict(content):
+    job_content = {'mlex_app': content['name'],
+                   'service_type': content['service_type'],
+                   'working_directory': '',
+                   'job_kwargs': {'uri': content['uri'], 'cmd': content['cmd'][0]}
+    }
+    return job_content
+
 @app.callback(
     Output("dummy", "data"),
     Input("button-launch", "n_clicks"),
     State('table-model-list', 'selected_rows'),
     State("table-contents-cache", "data"),
+    State("tab-group","value"),
     prevent_initial_call=True,
 )
-def launch_jobs(n_clicks, rows, data):
-    print(f'data {data}')
-    for row in rows:
-        print(f'row {row}')
-        print(f'data {data}')
-        content = data[row]
+def launch_jobs(n_clicks, rows, data, tab_value):
+    compute_dict = {'user_uid': '001',
+                    'host_list': ['local.als.lbl.gov', 'vaughan.als.lbl.gov'],
+                    'requirements': {'num_processors': 2,
+                                     'num_gpus': 0,
+                                     'num_nodes': 2},
+                    'job_list': [],
+                    'dependencies': {}}
+    
+    if tab_value == 'workflow':
+        for row in rows:
+            job_list = []
+            dependency = {}
+            workflow_list = data[row]['workflow_list']
+            for i,job_id in enumerate(workflow_list):
+                job_list.append(job_content_dict(get_content(job_id)))
+                dependency[str(i)] = []
+                if data[row]['workflow_type'] == 'serial':
+                    for j in range(i):
+                        dependency[str(i)].append(j) 
+
+            compute_dict['job_list'] = job_list
+            compute_dict['dependencies'] = dependency
+            if len(job_list)==1:
+                compute_dict['requirements']['num_nodes'] = 1
+            response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
+    else:
         job_list = []
         dependency = {}
-        workflow_list = content['workflow_list']
-        for i,job_id in enumerate(workflow_list):
-            job_content = {}
-            child_content = get_content(job_id)
-            job_content['mlex_app'] = child_content['name']
-            job_content['service_type'] = child_content['service_type']
-            job_content['working_directory'] = ''
-            job_content['job_kwargs'] = {'uri': child_content['uri'], 'cmd': child_content['cmd'][0]}
-            job_list.append(job_content)
-            dependency[str(i)] = []
-            if content['workflow_type'] == 'serial':
-                for j in range(i):
-                    dependency[str(i)].append(j) 
-
-        compute_dict = {'user_uid': '001',
-                        'host_list': ['local.als.lbl.gov', 'vaughan.als.lbl.gov'],
-                        'requirements': {'num_processors': 2,
-                                         'num_gpus': 0,
-                                         'num_nodes': 2},
-                        'job_list': job_list,
-                        'dependencies': dependency}
-
+        for i,row in enumerate(rows):
+           job_list.append(job_content_dict(data[row])) 
+           dependency[str(i)] = []  #all modes and apps are regarded as independent at this time
+        
+        compute_dict['job_list'] = job_list
+        compute_dict['dependencies'] = dependency
+        if len(job_list)==1:
+            compute_dict['requirements']['num_nodes'] = 1
+        print(f'compute dict {compute_dict}')
         response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
+        
     return ''
 
 
