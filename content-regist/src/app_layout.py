@@ -100,6 +100,11 @@ def dash_forms(type):
             ],
         ),
         dbc.FormGroup(
+            [ dbc.Label("Enter the commands to deploy the {}. Use comma to separate.".format(type), className="mr-2"),
+              dbc.Input(id="cmd-regist", type="text", placeholder="Enter commands to deploy the {}".format(type), debounce=True),
+            ],
+        ),
+        dbc.FormGroup(
             [
                 dbc.Label("Enter description (optional) for the {}.".format(type) ),
                 dbc.Input(id="description-regist", type="text", placeholder="Enter description.",debounce=True),
@@ -179,12 +184,6 @@ MODEL_REGISTRY = html.Div([
             labelStyle={'margin': '6px'}
         ),
     ]),
-    dbc.FormGroup(
-        [ dbc.Label("Enter the commands to deploy the model. Use comma to separate.", className="mr-2"),
-          dbc.Input(id="cmd-regist", type="text", placeholder="Enter commands to deploy the model", debounce=True),
-        ],
-    #className="mr-3"
-    ),
     dbc.FormGroup(
         [   dbc.Label("Resources requirement", className="mr-2"),
             html.Div([
