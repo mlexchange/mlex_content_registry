@@ -457,33 +457,37 @@ def download_model(n_clicks, data):
     State("table-contents-cache", "data"),
     prevent_initial_call=True,
 )
-def launch_jobs(n_clicks, row, data):
-    workflow_content = data[row[0]]
-    job_list = []
-    dependency = {}
-    workflow_list = workflow_content['workflow_list']
-    for i,job_id in enumerate(workflow_list):
-        job_content = {}
-        data = get_content(job_id)
-        job_content['mlex_app'] = data['name']
-        job_content['service_type'] = data['service_type']
-        job_content['working_directory'] = ''
-        job_content['job_kwargs'] = {'uri': data['uri'], 'cmd': data['cmd'][0]}
-        job_list.append(job_content)
-        dependency[str(i)] = []
-        if workflow_content['workflow_type'] == 'serial':
-            for j in range(i):
-                dependency[str(i)].append(j) 
+def launch_jobs(n_clicks, rows, data):
+    print(f'data {data}')
+    for row in rows:
+        print(f'row {row}')
+        print(f'data {data}')
+        content = data[row]
+        job_list = []
+        dependency = {}
+        workflow_list = content['workflow_list']
+        for i,job_id in enumerate(workflow_list):
+            job_content = {}
+            child_content = get_content(job_id)
+            job_content['mlex_app'] = child_content['name']
+            job_content['service_type'] = child_content['service_type']
+            job_content['working_directory'] = ''
+            job_content['job_kwargs'] = {'uri': child_content['uri'], 'cmd': child_content['cmd'][0]}
+            job_list.append(job_content)
+            dependency[str(i)] = []
+            if content['workflow_type'] == 'serial':
+                for j in range(i):
+                    dependency[str(i)].append(j) 
 
-    compute_dict = {'user_uid': '001',
-                    'host_list': ['local.als.lbl.gov', 'vaughan.als.lbl.gov'],
-                    'requirements': {'num_processors': 2,
-                                     'num_gpus': 0,
-                                     'num_nodes': 2},
-                    'job_list': job_list,
-                    'dependencies': dependency}
+        compute_dict = {'user_uid': '001',
+                        'host_list': ['local.als.lbl.gov', 'vaughan.als.lbl.gov'],
+                        'requirements': {'num_processors': 2,
+                                         'num_gpus': 0,
+                                         'num_nodes': 2},
+                        'job_list': job_list,
+                        'dependencies': dependency}
 
-    response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
+        response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
     return ''
 
 
