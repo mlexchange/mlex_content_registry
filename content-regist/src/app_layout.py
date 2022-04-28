@@ -17,7 +17,7 @@ except Exception:
 
 MODEL_KEYS    = ['name', 'version', 'owner', 'type', 'uri','description']
 APP_KEYS      = ['name', 'version', 'owner', 'content_id', 'uri','description']
-WORKFLOW_KEYS = ['name', 'version', 'owner', 'description']
+WORKFLOW_KEYS = ['name', 'version', 'owner', 'workflow_type', 'description']
 
 OWNER = 'mlexchange team'
 
