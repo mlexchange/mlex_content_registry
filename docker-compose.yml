@@ -9,13 +9,11 @@ services:
       dockerfile: "docker/Dockerfile"
     volumes:
       - ./content-api/src:/app/api/src
-    expose:
-      - "8000"
     ports:
       - "8000:8000"
     networks:
       - content_registry_network
-      
+
   content-registry:
     restart: "unless-stopped"
     container_name: "content-registry"
@@ -43,8 +41,9 @@ volumes:
       o: "bind"
 
 networks:
-  computing_api_default:
-    external: true
   content_registry_network:
     driver: bridge
+  computing_api_default:
+    external: true
+
 
