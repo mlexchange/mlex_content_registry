@@ -470,10 +470,13 @@ def launch_jobs(n_clicks, row, data):
         job_content['working_directory'] = ''
         job_content['job_kwargs'] = {'uri': data['uri'], 'cmd': data['cmd'][0]}
         job_list.append(job_content)
-        dependency[str(i)] = [] 
+        dependency[str(i)] = []
+        if workflow_content['workflow_type'] == 'serial':
+            for j in range(i):
+                dependency[str(i)].append(j) 
 
     compute_dict = {'user_uid': '001',
-                    'host_list': ['vaughan.als.lbl.gov'],
+                    'host_list': ['local.als.lbl.gov', 'vaughan.als.lbl.gov'],
                     'requirements': {'num_processors': 2,
                                      'num_gpus': 0,
                                      'num_nodes': 2},
