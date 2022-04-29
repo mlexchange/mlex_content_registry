@@ -15,9 +15,9 @@ try:
 except Exception:
     print("Unable to connect to the server.")
 
-MODEL_KEYS    = ['name', 'version', 'owner', 'type', 'uri','description']
-APP_KEYS      = ['name', 'version', 'owner', 'content_id', 'uri','description']
-WORKFLOW_KEYS = ['name', 'version', 'owner', 'description']
+MODEL_KEYS    = ['name', 'version', 'owner', 'type', 'uri', 'description']
+APP_KEYS      = ['name', 'version', 'owner', 'uri', 'description']
+WORKFLOW_KEYS = ['name', 'version', 'owner', 'workflow_type', 'description']
 
 OWNER = 'mlexchange team'
 
@@ -97,6 +97,11 @@ def dash_forms(type):
             [
                 dbc.Label("Enter reference for the {}.".format(type) ),
                 dbc.Input(id="reference-regist", type="text", placeholder="Enter reference.",debounce=True),
+            ],
+        ),
+        dbc.FormGroup(
+            [ dbc.Label("Enter the commands to deploy the {}. Use comma to separate.".format(type), className="mr-2"),
+              dbc.Input(id="cmd-regist", type="text", placeholder="Enter commands to deploy the {}".format(type), debounce=True),
             ],
         ),
         dbc.FormGroup(
@@ -180,12 +185,6 @@ MODEL_REGISTRY = html.Div([
         ),
     ]),
     dbc.FormGroup(
-        [ dbc.Label("Enter the commands to deploy the model. Use comma to separate.", className="mr-2"),
-          dbc.Input(id="cmd-regist", type="text", placeholder="Enter commands to deploy the model", debounce=True),
-        ],
-    #className="mr-3"
-    ),
-    dbc.FormGroup(
         [   dbc.Label("Resources requirement", className="mr-2"),
             html.Div([
                 dbc.Label("CPU", className="mr-2"),
@@ -232,6 +231,16 @@ APP_REGISTRY = html.Div([
           labelStyle={'margin': '6px'}
       ),
     ]),
+    dbc.Collapse(
+        children=dbc.FormGroup(
+            [
+                dbc.Label("Please input port number for the frontend app. Use comma to separate if there are more than one."),
+                dbc.Input(id="app-port", type="text", placeholder="Enter port number.", debounce=True),
+            ],
+        ),
+        id="collapse-app-port",
+        is_open=False,
+    ),
     dbc.FormGroup(
             [   dbc.Label("Resources requirement", className="mr-2"),
                 html.Div([

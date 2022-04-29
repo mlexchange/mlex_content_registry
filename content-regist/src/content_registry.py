@@ -55,6 +55,17 @@ def toggle_modal(n1, n2, is_open):
     return is_open
 
 
+@app.callback(
+    Output("collapse-app-port", "is_open"),
+    Input("app-type", "value")
+)
+def toggle_app_port_inputform(app_type):
+    if app_type == 'frontend':
+        return True
+    else:
+        return False
+
+
 # might need collapse to handle id not found issues
 @app.callback( 
     Output("tab-display", "children"),
@@ -221,6 +232,7 @@ def options_for_workflow_dropdown(value):
     Input("generate-json", "n_clicks"),
     Input("gui-check", "n_clicks"),
     Input('upload-data', 'contents'),
+    State('app-port', 'value'),
     State('upload-data', 'filename'),
     State('upload-data', 'last_modified'),
 
@@ -229,7 +241,7 @@ def options_for_workflow_dropdown(value):
 def json_generator(content_type, component_type, name, version, model_type, uri, reference, \
                    description, applications, access_type, service_type, app_cpu_num, \
                    app_gpu_num, model_cpu_num, model_gpu_num, cmds, workflow_type, \
-                   workflow_children, children, n1, n2, upload_content, file_name, file_date):
+                   workflow_children, children, n1, n2, upload_content, ports, file_name, file_date):
     
     
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
@@ -327,6 +339,14 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                 for child in workflow_children:
                     workflow_list.append(child['props']['children'][1]['props']['children'][1]['props']['value'])
                 json_document["workflow_list"] = workflow_list
+                
+        if content_type == 'app':
+            if json_document["service_type"] == 'frontend' and bool(ports):
+                json_document["port"] = []
+                ports = ports.split(",")
+                for port in ports:
+                    if int(port) not in json_document["port"]:
+                        json_document["port"].append(int(port))
             
     if 'upload-data' in changed_id:
         json_document = {}
@@ -450,37 +470,67 @@ def download_model(n_clicks, data):
 
 
 #---------------------------------- launch jobs ------------------------------------------
+def job_content_dict(content):
+    job_content = {'mlex_app': content['name'],
+                   'service_type': content['service_type'],
+                   'working_directory': '',
+                   'job_kwargs': {'uri': content['uri'], 'cmd': content['cmd'][0]}
+    }
+    if 'port' in content:
+        job_content['job_kwargs']['port'] = content['port']
+    
+    return job_content
+
+
 @app.callback(
     Output("dummy", "data"),
     Input("button-launch", "n_clicks"),
     State('table-model-list', 'selected_rows'),
     State("table-contents-cache", "data"),
+    State("tab-group","value"),
     prevent_initial_call=True,
 )
-def launch_jobs(n_clicks, row, data):
-    workflow_content = data[row[0]]
-    job_list = []
-    dependency = {}
-    workflow_list = workflow_content['workflow_list']
-    for i,job_id in enumerate(workflow_list):
-        job_content = {}
-        data = get_content(job_id)
-        job_content['mlex_app'] = data['name']
-        job_content['service_type'] = data['service_type']
-        job_content['working_directory'] = ''
-        job_content['job_kwargs'] = {'uri': data['uri'], 'cmd': data['cmd'][0]}
-        job_list.append(job_content)
-        dependency[str(i)] = [] 
-
+def launch_jobs(n_clicks, rows, data, tab_value):
     compute_dict = {'user_uid': '001',
-                    'host_list': ['vaughan.als.lbl.gov'],
+                    'host_list': ['local.als.lbl.gov', 'vaughan.als.lbl.gov'],
                     'requirements': {'num_processors': 2,
                                      'num_gpus': 0,
                                      'num_nodes': 2},
-                    'job_list': job_list,
-                    'dependencies': dependency}
+                    'job_list': [],
+                    'dependencies': {}}
+    
+    if tab_value == 'workflow':
+        for row in rows:
+            job_list = []
+            dependency = {}
+            workflow_list = data[row]['workflow_list']
+            for i,job_id in enumerate(workflow_list):
+                job_list.append(job_content_dict(get_content(job_id)))
+                dependency[str(i)] = []
+                if data[row]['workflow_type'] == 'serial':
+                    for j in range(i):
+                        dependency[str(i)].append(j) 
 
-    response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
+            compute_dict['job_list'] = job_list
+            compute_dict['dependencies'] = dependency
+            if len(job_list)==1:
+                compute_dict['requirements']['num_nodes'] = 1
+            response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
+    
+    elif tab_value == 'model' or tab_value == 'app':
+        job_list = []
+        dependency = {}
+        for i,row in enumerate(rows):
+           job_list.append(job_content_dict(data[row])) 
+           dependency[str(i)] = []  #all modes and apps are regarded as independent at this time
+        
+        compute_dict['job_list'] = job_list
+        compute_dict['dependencies'] = dependency
+        if len(job_list)==1:
+            compute_dict['requirements']['num_nodes'] = 1
+        print(f'compute dict {compute_dict}')
+        response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
+        
     return ''
 
 
