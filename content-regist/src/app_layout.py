@@ -543,7 +543,7 @@ meta = [
         children=[   
             dcc.Store(id="json-store", data=MODEL_TEMPLATE.copy()),
             dcc.Store(id="nothing", data=''),
-            dcc.Store(id="dummy", data=''),
+            dcc.Store(id="web-url", data=''),
             dcc.Store(id="dummy1", data=''),
             dcc.Store(id="table-contents-cache", data=[]),
             dcc.Store(id='validation', data=0),

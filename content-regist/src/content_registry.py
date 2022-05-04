@@ -474,16 +474,17 @@ def job_content_dict(content):
     job_content = {'mlex_app': content['name'],
                    'service_type': content['service_type'],
                    'working_directory': '',
-                   'job_kwargs': {'uri': content['uri'], 'cmd': content['cmd'][0]}
+                   'job_kwargs': {'uri': content['uri'], 
+                                  'cmd': content['cmd'][0]}
     }
-    if 'port' in content:
-        job_content['job_kwargs']['port'] = content['port']
+    if 'map' in content:
+        job_content['job_kwargs']['map'] = content['map']
     
     return job_content
 
 
 @app.callback(
-    Output("dummy", "data"),
+    Output("web-url", "data"),
     Input("button-launch", "n_clicks"),
     State('table-model-list', 'selected_rows'),
     State("table-contents-cache", "data"),
@@ -491,6 +492,7 @@ def job_content_dict(content):
     prevent_initial_call=True,
 )
 def launch_jobs(n_clicks, rows, data, tab_value):
+    
     compute_dict = {'user_uid': '001',
                     'host_list': ['local.als.lbl.gov', 'vaughan.als.lbl.gov'],
                     'requirements': {'num_processors': 2,
@@ -516,6 +518,7 @@ def launch_jobs(n_clicks, rows, data, tab_value):
             if len(job_list)==1:
                 compute_dict['requirements']['num_nodes'] = 1
             response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
+            #"http://{}.mlsandbox.lbl.gov".format(response.json())
     
     elif tab_value == 'model' or tab_value == 'app':
         job_list = []
@@ -532,7 +535,9 @@ def launch_jobs(n_clicks, rows, data, tab_value):
         compute_dict['description'] = 'parallel workflow: ' + job_names
         if len(job_list)==1:
             compute_dict['requirements']['num_nodes'] = 1
+        print(f'cpmpute dict {compute_dict}')
         response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
+       #webbrowser.open_new("http://{}.mlsandbox.lbl.gov".format(response.json()))
         
     return ''
 
