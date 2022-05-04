@@ -542,7 +542,6 @@ def launch_jobs(n_clicks, rows, data, tab_value):
     Output("table-job-list", "data"),
     Input("button-refresh-jobs", "n_clicks"),
     Input("tab-group","value"),
-    #Input("table-job-list", "data"),
     prevent_initial_call=True,
 )
 def jobs_table(n, tab_value):
