@@ -360,7 +360,7 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
             
             if "content_type" in json_document:
                 if json_document["content_type"] == "model":
-                    if "service_type" in json_document:
+                    if "service_type" not in json_document:
                         json_document["service_type"] = "backend"
     
     return json_document, data_uploader
@@ -496,8 +496,7 @@ def launch_jobs(n_clicks, rows, data, tab_value):
                     'requirements': {'num_processors': 2,
                                      'num_gpus': 0,
                                      'num_nodes': 2},
-                    'job_list': [],
-                    'dependencies': {}}
+                    }
     
     if tab_value == 'workflow':
         for row in rows:
@@ -513,6 +512,7 @@ def launch_jobs(n_clicks, rows, data, tab_value):
 
             compute_dict['job_list'] = job_list
             compute_dict['dependencies'] = dependency
+            compute_dict['description'] = data[row]['name']+' v'+data[row]['version']
             if len(job_list)==1:
                 compute_dict['requirements']['num_nodes'] = 1
             response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
@@ -520,17 +520,74 @@ def launch_jobs(n_clicks, rows, data, tab_value):
     elif tab_value == 'model' or tab_value == 'app':
         job_list = []
         dependency = {}
+        job_names = ''
         for i,row in enumerate(rows):
-           job_list.append(job_content_dict(data[row])) 
-           dependency[str(i)] = []  #all modes and apps are regarded as independent at this time
+            job_content = job_content_dict(data[row])
+            print(f'job_content {job_content}')
+            job_list.append(job_content) 
+            dependency[str(i)] = []  #all modes and apps are regarded as independent at this time
+            job_names += job_content['mlex_app'] + ', '
         
         compute_dict['job_list'] = job_list
         compute_dict['dependencies'] = dependency
+        compute_dict['description'] = 'parallel workflow: ' + job_names
         if len(job_list)==1:
             compute_dict['requirements']['num_nodes'] = 1
-        print(f'compute dict {compute_dict}')
         response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
         
+    return ''
+
+
+@app.callback(
+    Output("table-job-list", "data"),
+    Input("button-refresh-jobs", "n_clicks"),
+    Input("tab-group","value"),
+    #Input("table-job-list", "data"),
+    prevent_initial_call=True,
+)
+def jobs_table(n, tab_value):
+    job_list = []
+    if tab_value == 'workflow':
+        #response = requests.get('http://job-service:8080/api/v0/workflows', params={'state':'running'}).json()
+        response = requests.get('http://job-service:8080/api/v0/workflows').json()
+        for i,job in enumerate(response):
+            job_uid = job['uid']
+            job['submission_time'] = job['timestamps']['submission_time']
+            job['execution_time'] = job['timestamps']['execution_time']
+            job['job_status'] = job['status']['state']
+            job_list.append(job)
+    
+    elif tab_value == 'model' or tab_value == 'app':
+        response_get = requests.get('http://job-service:8080/api/v0/jobs').json()
+        for i,job in enumerate(response_get):
+            job_uid = job['uid']
+            job['submission_time'] = job['timestamps']['submission_time']
+            job['execution_time'] = job['timestamps']['execution_time']
+            job['job_status'] = job['status']['state']
+            job['description'] = job['job_kwargs']['uri']
+            job_list.append(job)
+
+    return job_list
+
+
+@app.callback(
+    Output("dummy1", "data"),
+    Input("button-terminate", "n_clicks"),
+    Input("table-job-list", "data"),
+    Input("tab-group","value"),
+    State('table-job-list', 'selected_rows'),
+    prevent_initial_call=True,
+)
+def terminate_jobs(n_clicks, jobs, tab_value, rows):
+    if bool(rows):
+        for row in rows:
+            job_id = jobs[row]['uid']
+            print(f'terminate uid {job_id}')
+            if tab_value == 'workflow':
+                response = requests.patch(f'http://job-service:8080/api/v0/workflows/{job_id}/terminate')
+            elif tab_value == 'model' or tab_value == 'app':
+                response = requests.patch(f'http://job-service:8080/api/v0/jobs/{job_id}/terminate')
+    
     return ''
 
 
