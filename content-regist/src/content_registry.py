@@ -342,11 +342,11 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                 
         if content_type == 'app':
             if json_document["service_type"] == 'frontend' and bool(ports):
-                json_document["port"] = []
+                json_document["map"] = {}
                 ports = ports.split(",")
                 for port in ports:
-                    if int(port) not in json_document["port"]:
-                        json_document["port"].append(int(port))
+                    if port not in json_document["map"].keys():
+                        json_document["map"][port] = ""
             
     if 'upload-data' in changed_id:
         json_document = {}
@@ -523,7 +523,6 @@ def launch_jobs(n_clicks, rows, data, tab_value):
         job_names = ''
         for i,row in enumerate(rows):
             job_content = job_content_dict(data[row])
-            print(f'job_content {job_content}')
             job_list.append(job_content) 
             dependency[str(i)] = []  #all modes and apps are regarded as independent at this time
             job_names += job_content['mlex_app'] + ', '

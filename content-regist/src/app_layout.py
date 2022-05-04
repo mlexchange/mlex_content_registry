@@ -235,8 +235,8 @@ APP_REGISTRY = html.Div([
     dbc.Collapse(
         children=dbc.FormGroup(
             [
-                dbc.Label("Please input port number for the frontend app. Use comma to separate if there are more than one."),
-                dbc.Input(id="app-port", type="text", placeholder="Enter port number.", debounce=True),
+                dbc.Label("Please input porting for the frontend app. Use comma to separate if there are more than one."),
+                dbc.Input(id="app-port", type="text", placeholder="Enter port_number/method (e.g. 8061/tcp).", debounce=True),
             ],
         ),
         id="collapse-app-port",
