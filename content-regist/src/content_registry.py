@@ -519,7 +519,7 @@ def launch_jobs(n_clicks, rows, data, tab_value):
             if len(job_list)==1:
                 compute_dict['requirements']['num_nodes'] = 1
             response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-            web_url = "http://{}.mlsandbox.lbl.gov".format(response.json())
+            web_url = "http://{}.mlsandbox.als.lbl.gov".format(response.json())
     
     elif tab_value == 'model' or tab_value == 'app':
         job_list = []
@@ -537,7 +537,7 @@ def launch_jobs(n_clicks, rows, data, tab_value):
         if len(job_list)==1:
             compute_dict['requirements']['num_nodes'] = 1
         response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-        web_url = "http://{}.mlsandbox.lbl.gov".format(response.json())
+        web_url = "http://{}.mlsandbox.als.lbl.gov".format(response.json())
         
     return web_url, tab_value
 
