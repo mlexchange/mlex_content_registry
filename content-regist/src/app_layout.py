@@ -8,7 +8,7 @@ import dash_table
 
 from utility import get_content_list
 
-
+job_list = []
 model_list = get_content_list()
 try:
     print(f"model list:\n{model_list}")
@@ -18,6 +18,7 @@ except Exception:
 MODEL_KEYS    = ['name', 'version', 'owner', 'type', 'uri', 'description']
 APP_KEYS      = ['name', 'version', 'owner', 'uri', 'description']
 WORKFLOW_KEYS = ['name', 'version', 'owner', 'workflow_type', 'description']
+JOB_KEYS      = ['description', 'submission_time', 'execution_time', 'job_status']
 
 OWNER = 'mlexchange team'
 
@@ -234,8 +235,8 @@ APP_REGISTRY = html.Div([
     dbc.Collapse(
         children=dbc.FormGroup(
             [
-                dbc.Label("Please input port number for the frontend app. Use comma to separate if there are more than one."),
-                dbc.Input(id="app-port", type="text", placeholder="Enter port number.", debounce=True),
+                dbc.Label("Please input porting for the frontend app. Use comma to separate if there are more than one."),
+                dbc.Input(id="app-port", type="text", placeholder="Enter port_number/method (e.g. 8061/tcp).", debounce=True),
             ],
         ),
         id="collapse-app-port",
@@ -458,7 +459,15 @@ table_models = dbc.Card(
             dbc.Button(
                 "Launch the Selected",
                 id="button-launch",
-                className="mtb-2",
+                className="m-2",
+                color="success",
+                size="sm",
+                n_clicks=0,
+            ),
+            dbc.Button(
+                "Open App",
+                id="button-open-window",
+                className="m-2",
                 color="success",
                 size="sm",
                 n_clicks=0,
@@ -497,6 +506,44 @@ table_models = dbc.Card(
 )
 
 
+table_jobs = dbc.Card(
+    id ='running-jobs',
+    children = [
+        dbc.CardBody([
+            dbc.Button(
+                "Refresh Job List",
+                id="button-refresh-jobs",
+                className="mtb-2",
+                color="primary",
+                size="sm",
+                n_clicks=0,
+            ),
+            dbc.Button(
+                "Terminate the Selected",
+                id="button-terminate",
+                className="m-2",
+                color="warning",
+                size="sm",
+                n_clicks=0,
+            ),
+            html.Div(
+                children = [
+                dash_table.DataTable(
+                    id='table-job-list',
+                    columns=[{'id': p, 'name': p} for p in JOB_KEYS],
+                    data=job_list,
+                    row_selectable='multi',
+                    editable=False,
+                    style_cell={'padding': '0.5rem', 'textAlign': 'left'},
+                    css=[{"selector": ".show-hide", "rule": "display: none"}],
+                    style_table={'height':'10rem', 'overflowY': 'auto'}
+                ),
+            ])
+        ])
+    ]
+)
+
+
 # metadata
 meta = [
     html.Div(
@@ -504,7 +551,10 @@ meta = [
         children=[   
             dcc.Store(id="json-store", data=MODEL_TEMPLATE.copy()),
             dcc.Store(id="nothing", data=''),
+            dcc.Store(id="web-url", data=''),
+            dcc.Store(id="job-type", data=''),
             dcc.Store(id="dummy", data=''),
+            dcc.Store(id="dummy1", data=''),
             dcc.Store(id="table-contents-cache", data=[]),
             dcc.Store(id='validation', data=0),
         ],
@@ -515,11 +565,12 @@ meta = [
 # Setting up initial webpage layout
 app.layout = html.Div (
         [
-            header,
+            #header,
             dbc.Container(
                 [
                     dbc.Row([dbc.Col(register_model, width=6), dbc.Col(upload_model, width=6)]),
                     dbc.Row(dbc.Col(table_models, width=12)),
+                    dbc.Row(dbc.Col(table_jobs, width=12)),
                     dbc.Row(meta)
                 ]
             ),
