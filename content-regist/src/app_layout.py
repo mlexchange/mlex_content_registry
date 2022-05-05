@@ -565,7 +565,7 @@ meta = [
 # Setting up initial webpage layout
 app.layout = html.Div (
         [
-            header,
+            #header,
             dbc.Container(
                 [
                     dbc.Row([dbc.Col(register_model, width=6), dbc.Col(upload_model, width=6)]),
