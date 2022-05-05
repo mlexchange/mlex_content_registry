@@ -464,6 +464,14 @@ table_models = dbc.Card(
                 size="sm",
                 n_clicks=0,
             ),
+            dbc.Button(
+                "Open App",
+                id="button-open-window",
+                className="m-2",
+                color="success",
+                size="sm",
+                n_clicks=0,
+            ),
             dbc.Modal(
                 [
                     dbc.ModalHeader("Warning"),
@@ -544,6 +552,7 @@ meta = [
             dcc.Store(id="json-store", data=MODEL_TEMPLATE.copy()),
             dcc.Store(id="nothing", data=''),
             dcc.Store(id="web-url", data=''),
+            dcc.Store(id="job-type", data=''),
             dcc.Store(id="dummy", data=''),
             dcc.Store(id="dummy1", data=''),
             dcc.Store(id="table-contents-cache", data=[]),

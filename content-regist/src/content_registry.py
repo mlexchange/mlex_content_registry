@@ -485,6 +485,7 @@ def job_content_dict(content):
 
 @app.callback(
     Output("web-url", "data"),
+    Output("job-type", "data"),
     Input("button-launch", "n_clicks"),
     State('table-model-list', 'selected_rows'),
     State("table-contents-cache", "data"),
@@ -538,19 +539,25 @@ def launch_jobs(n_clicks, rows, data, tab_value):
         response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
         web_url = "http://{}.mlsandbox.lbl.gov".format(response.json())
         
-    return web_url
+    return web_url, tab_value
 
 
 app.clientside_callback(
     """
-    function(web_url) {
-        window.open(web_url);
+    function(n_clicks, web_url, job_type) {
+        if (job_type == 'app'){
+            window.open(web_url);
+        }
         return '';
     }
     """,
     Output('dummy', 'data'),
-    Input('web-url', 'data')
+    Input("button-open-window", "n_clicks"),
+    State('web-url', 'data'),
+    State('job-type', 'data')
 )
+
+
 
 
 @app.callback(
