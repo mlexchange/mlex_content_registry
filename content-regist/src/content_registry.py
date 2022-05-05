@@ -495,7 +495,7 @@ def job_content_dict(content):
 def launch_jobs(n_clicks, rows, data, tab_value):
     web_url = ''
     compute_dict = {'user_uid': '001',
-                    'host_list': ['local.als.lbl.gov', 'vaughan.als.lbl.gov'],
+                    'host_list': ['mlsandbox.als.lbl.gov', 'local.als.lbl.gov', 'vaughan.als.lbl.gov'],
                     'requirements': {'num_processors': 2,
                                      'num_gpus': 0,
                                      'num_nodes': 2},
