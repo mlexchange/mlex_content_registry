@@ -484,7 +484,7 @@ def job_content_dict(content):
 
 
 @app.callback(
-    Output("web-url", "data"),
+    Output("workflow-ids", "data"),
     Output("job-type", "data"),
     Input("button-launch", "n_clicks"),
     State('table-model-list', 'selected_rows'),
@@ -500,7 +500,7 @@ def launch_jobs(n_clicks, rows, data, tab_value):
                                      'num_gpus': 0,
                                      'num_nodes': 2},
                     }
-    
+    workflow_ids = []
     if tab_value == 'workflow':
         for row in rows:
             job_list = []
@@ -519,7 +519,7 @@ def launch_jobs(n_clicks, rows, data, tab_value):
             if len(job_list)==1:
                 compute_dict['requirements']['num_nodes'] = 1
             response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-            web_url = "http://{}.mlsandbox.als.lbl.gov".format(response.json())
+            workflow_ids.append(response.json())
     
     elif tab_value == 'model' or tab_value == 'app':
         job_list = []
@@ -537,14 +537,38 @@ def launch_jobs(n_clicks, rows, data, tab_value):
         if len(job_list)==1:
             compute_dict['requirements']['num_nodes'] = 1
         response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-        web_url = "http://{}.mlsandbox.als.lbl.gov".format(response.json())
+        workflow_ids.append(response.json())
         
-    return web_url, tab_value
+    return workflow_ids, tab_value
+
+
+@app.callback(
+    Output("web-url", "data"),
+    Input("button-open-window", "n_clicks"),
+    State("workflow-ids", "data"),
+)
+def update_web_url(n_clicks, uids):
+    web_url = ''
+    if bool(uids): 
+        uid = uids[0]
+        port_url = 'http://job-service:8080/api/v0/workflows/{}/mapping'.format(uid)
+        print(f'port_url {port_url}')
+        response = requests.get(port_url).json()
+        print(f'response {response}')
+        for key1 in response:
+            value1 = response.get(key1)
+            for key2 in value1:
+                port = value1.get(key2)
+                port=port[0]["HostPort"]
+                print(f'port {port}')
+                web_url = "http://localhost:{}".format(port)
+    
+    return web_url
 
 
 app.clientside_callback(
     """
-    function(n_clicks, web_url, job_type) {
+    function(web_url, job_type) {
         if (job_type == 'app'){
             window.open(web_url);
         }
@@ -552,12 +576,9 @@ app.clientside_callback(
     }
     """,
     Output('dummy', 'data'),
-    Input("button-open-window", "n_clicks"),
-    State('web-url', 'data'),
+    Input('web-url', 'data'),
     State('job-type', 'data')
 )
-
-
 
 
 @app.callback(
