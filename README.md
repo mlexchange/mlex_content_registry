@@ -12,6 +12,8 @@ Contents include:
 	- 
 
 ## How to use
+Requirements: MLExchange compute_api
+
 **Running content registry**   
 `docker-compose up --build`
 
