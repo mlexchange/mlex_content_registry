@@ -28,9 +28,11 @@ RUN pip3 install --upgrade pip &&\
 WORKDIR /app/content-regist
 ENV HOME /app/content-regist
 COPY src src
+COPY data data
 ENV PYTHONUNBUFFERED=1
 
 #ENTRYPOINT [ "python3" ]
 
-#CMD python3 src/content_registry.py
+
 CMD ["bash"]
+CMD python3 src/content_registry.py
