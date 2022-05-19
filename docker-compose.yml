@@ -21,8 +21,6 @@ services:
       context: "content-regist/"
       dockerfile: "docker/Dockerfile"
     command: "python3 src/content_registry.py"
-    environment:
-      DATA_DIR: "${COMPOSE_PROJECT_NAME}_contents"
     volumes:
       - ./content-regist/data:/app/content-regist/data    
       - ./content-regist/src:/app/content-regist/src
