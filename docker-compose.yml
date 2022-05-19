@@ -2,43 +2,23 @@ version: "3"
 
 services:
   content-api:
-    restart: "unless-stopped"
+    image: mlexchange1/content-api:1.0
+    #restart: "unless-stopped"
     container_name: "content-api"
-    build:
-      context: "content-api/"
-      dockerfile: "docker/Dockerfile"
-    volumes:
-      - ./content-api/src:/app/api/src
     ports:
       - "8000:8000"
     networks:
       - content_registry_network
 
   content-registry:
-    restart: "unless-stopped"
+    image: mlexchange1/content-registry:1.0
+    #restart: "unless-stopped"
     container_name: "content-registry"
-    build:
-      context: "content-regist/"
-      dockerfile: "docker/Dockerfile"
-    command: "python3 src/content_registry.py"
-    environment:
-      DATA_DIR: "${COMPOSE_PROJECT_NAME}_contents"
-    volumes:
-      - ./content-regist/data:/app/content-regist/data    
-      - ./content-regist/src:/app/content-regist/src
     ports:
       - "8051:8051"
     networks:
       - content_registry_network
       - computing_api_default
-
-volumes: 
-  data-m:
-    driver: local
-    driver_opts:
-      type: "none"
-      device: "${PWD}/dash-regist/data/"
-      o: "bind"
 
 networks:
   content_registry_network:

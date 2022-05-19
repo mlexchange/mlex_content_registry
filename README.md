@@ -15,7 +15,7 @@ Contents include:
 Requirements: MLExchange compute_api
 
 **Running content registry**   
-`docker-compose up --build`
+`docker-compose up`
 
 **Viewing existing contents**  
 Scroll down to the bottom of the page, click on **Refresh** button.
