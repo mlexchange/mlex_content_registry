@@ -3,7 +3,7 @@ version: "3"
 services:
   content-api:
     image: mlexchange1/content-api:1.0
-    #restart: "unless-stopped"
+    restart: "unless-stopped"
     container_name: "content-api"
     ports:
       - "8000:8000"
@@ -12,7 +12,7 @@ services:
 
   content-registry:
     image: mlexchange1/content-registry:1.0
-    #restart: "unless-stopped"
+    restart: "unless-stopped"
     container_name: "content-registry"
     ports:
       - "8051:8051"
