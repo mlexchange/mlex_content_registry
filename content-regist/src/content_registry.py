@@ -16,7 +16,7 @@ import base64
 import requests
 
 from utility import conn_mongodb, get_content_list, get_dropdown_options, get_schema, validate_json, \
-                    is_duplicate, update_mongodb, remove_key_from_dict_list, get_content
+                    is_duplicate, update_mongodb, remove_key_from_dict_list, get_content, send_webhook
 from generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
                       make_form_bool, make_form_graph
 
@@ -93,7 +93,7 @@ def update_layout(tab_value):
     Input('confirm-delete', 'n_clicks'),
     State("tab-group","value")
     )
-def update_regist(rows, n_click, tab_value):
+def delete_content(rows, n_click, tab_value):
     content_list = get_content_list(tab_value+'s')
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'confirm-delete' in changed_id:
@@ -106,6 +106,7 @@ def update_regist(rows, n_click, tab_value):
             for content_id in content_ids:
                 mycollection = conn_mongodb(tab_value+'s') 
                 mycollection.delete_one({"content_id": content_id})
+                send_webhook({"event": "delete_content", "content_id": content_id})
 
     return get_content_list(tab_value+'s')
 
@@ -379,11 +380,15 @@ def add_new_content(n1, n2, is_valid, json_document):
         if bool(json_document) and is_valid:
             mycollection = conn_mongodb(json_document['content_type']+'s')
             mycollection.insert_one(json_document)
+            send_webhook({"event": "add_content", "content_id": json_document["content_id"]})
 
     if 'button-register.n_clicks' in changed_id:
         if bool(json_document):
             mycollection = conn_mongodb(json_document['content_type']+'s')
             mycollection.insert_one(json_document)
+            msg = {'event': 'add_content', 'content_id': json_document['content_id']}
+            print(f'Producer: sending webhook msg {msg}')
+            send_webhook({"event": "add_content", "content_id": json_document["content_id"]})
 
 
 @app.callback(

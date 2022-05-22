@@ -10,6 +10,8 @@ from fastapi import FastAPI
 import requests
 from pydantic import BaseModel, ValidationError
 
+from content_api_util import send_webhook
+
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 MONGO_DB_URI = "mongodb+srv://admin:%s" % config['content database']['ATLAS_ADMIN']
@@ -130,6 +132,7 @@ def add_asset(content: dict):
     content["content_id"] = str(uuid.uuid4())
     mycollection = conn_mongodb('assets')
     mycollection.insert_one(content)
+    send_webhook({"event": "add_content", "content_id": content["content_id"]})
     return content["content_id"]
 
 
@@ -153,5 +156,32 @@ def delete_assets(uids: list):
     """
     mycollection = conn_mongodb('assets')
     mycollection.delete_many({'content_id':{'$in':uids}})
+    for uid in uids:
+        send_webhook({"event": "delete_content", "content_id": uid})
     
     
+#----------------------- webhook --------------------------
+@app.post(API_URL_PREFIX+"/webhook", tags=['webhook'])
+def add_webhook(msg: dict):
+    """
+    Add a webhook msg.  
+      - Args: dict 
+    """
+    msg["_id"] = str(uuid.uuid4())
+    mycollection = conn_mongodb('events')
+    mycollection.insert_one(msg)
+    print(f'Receiver: posting webhook msg {msg}')
+    return msg
+
+
+@app.get(API_URL_PREFIX+"/webhook", tags=['webhook'])
+def get_webhook():
+    """
+    Get webhook msgs.  
+      - Args: dict 
+    """
+    mycollection = conn_mongodb('events')
+    return list(mycollection.find({}))
+
+
+
