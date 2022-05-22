@@ -1,6 +1,10 @@
+import os
+import configparser
 import requests
 
-RECEIVER_URL = 'http://content-api:8000/api/v0/webhook'
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
+WEBHOOK_RECEIVER_URL = 'http://%s' % config['webhook']['RECEIVER']
 
 def send_webhook(msg):
     """
@@ -11,7 +15,7 @@ def send_webhook(msg):
     try:
         # Post a webhook message
         # default is a function applied to objects that are not serializable = it converts them to str
-        resp = requests.post(RECEIVER_URL, json=msg, headers={'Content-Type': 'application/json'}, timeout=1.0)
+        resp = requests.post(WEBHOOK_RECEIVER_URL, json=msg, headers={'Content-Type': 'application/json'}, timeout=1.0)
         # Returns an HTTPError if an error has occurred during the process (used for debugging).
         resp.raise_for_status()
     except requests.exceptions.HTTPError as err:

@@ -14,6 +14,7 @@ from copy import deepcopy
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 MONGO_DB_URI = "mongodb+srv://admin:%s" % config['content database']['ATLAS_ADMIN']
+WEBHOOK_RECEIVER_URL = 'http://%s' % config['webhook']['RECEIVER']
 
 #connecting to mongoDB Atlas
 def conn_mongodb(collection='models'):
@@ -152,8 +153,6 @@ def workflow_dependency(workflow):
 #             dependencies[workflow_id].extend(workflow_dependency_list)
 
 
-RECEIVER_URL = 'http://content-api:8000/api/v0/webhook'
-
 def send_webhook(msg):
     """
     Send a webhook to a specified URL
@@ -163,7 +162,7 @@ def send_webhook(msg):
     try:
         # Post a webhook message
         # default is a function applied to objects that are not serializable = it converts them to str
-        resp = requests.post(RECEIVER_URL, json=msg, headers={'Content-Type': 'application/json'}, timeout=1.0)
+        resp = requests.post(WEBHOOK_RECEIVER_URL, json=msg, headers={'Content-Type': 'application/json'}, timeout=1.0)
         # Returns an HTTPError if an error has occurred during the process (used for debugging).
         resp.raise_for_status()
     except requests.exceptions.HTTPError as err:
