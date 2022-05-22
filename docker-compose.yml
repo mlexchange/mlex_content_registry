@@ -20,7 +20,6 @@ services:
     build:
       context: "content-regist/"
       dockerfile: "docker/Dockerfile"
-    command: "python3 src/content_registry.py"
     volumes:
       - ./content-regist/data:/app/content-regist/data    
       - ./content-regist/src:/app/content-regist/src
@@ -29,14 +28,6 @@ services:
     networks:
       - content_registry_network
       - computing_api_default
-
-volumes: 
-  data-m:
-    driver: local
-    driver_opts:
-      type: "none"
-      device: "${PWD}/dash-regist/data/"
-      o: "bind"
 
 networks:
   content_registry_network:
