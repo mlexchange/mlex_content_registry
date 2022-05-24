@@ -489,8 +489,7 @@ def job_content_dict(content):
 
 
 @app.callback(
-    Output("workflow-ids", "data"),
-    Output("job-type", "data"),
+    Output("dummy", "data"),
     Input("button-launch", "n_clicks"),
     State('table-model-list', 'selected_rows'),
     State("table-contents-cache", "data"),
@@ -498,14 +497,12 @@ def job_content_dict(content):
     prevent_initial_call=True,
 )
 def launch_jobs(n_clicks, rows, data, tab_value):
-    web_url = ''
     compute_dict = {'user_uid': '001',
                     'host_list': ['mlsandbox.als.lbl.gov', 'local.als.lbl.gov', 'vaughan.als.lbl.gov'],
                     'requirements': {'num_processors': 2,
                                      'num_gpus': 0,
                                      'num_nodes': 2},
                     }
-    workflow_ids = []
     if tab_value == 'workflow':
         for row in rows:
             job_list = []
@@ -524,7 +521,6 @@ def launch_jobs(n_clicks, rows, data, tab_value):
             if len(job_list)==1:
                 compute_dict['requirements']['num_nodes'] = 1
             response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-            workflow_ids.append(response.json())
     
     elif tab_value == 'model' or tab_value == 'app':
         job_list = []
@@ -542,48 +538,8 @@ def launch_jobs(n_clicks, rows, data, tab_value):
         if len(job_list)==1:
             compute_dict['requirements']['num_nodes'] = 1
         response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-        workflow_ids.append(response.json())
         
-    return workflow_ids, tab_value
-
-
-@app.callback(
-    Output("web-url", "data"),
-    Input("button-open-window", "n_clicks"),
-    State("workflow-ids", "data"),
-)
-def update_web_url(n_clicks, uids):
-    web_url = ''
-    if bool(uids): 
-        uid = uids[0]
-        port_url = 'http://job-service:8080/api/v0/workflows/{}/mapping'.format(uid)
-        print(f'port_url {port_url}')
-        response = requests.get(port_url).json()
-        print(f'response {response}')
-        for key1 in response:
-            value1 = response.get(key1)
-            for key2 in value1:
-                port = value1.get(key2)
-                port=port[0]["HostPort"]
-                print(f'port {port}')
-                web_url = "http://localhost:{}".format(port)
-    
-    return web_url
-
-
-app.clientside_callback(
-    """
-    function(web_url, job_type) {
-        if (job_type == 'app'){
-            window.open(web_url);
-        }
-        return '';
-    }
-    """,
-    Output('dummy', 'data'),
-    Input('web-url', 'data'),
-    State('job-type', 'data')
-)
+    return ''
 
 
 @app.callback(
@@ -618,10 +574,47 @@ def jobs_table(n, tab_value):
 
 
 @app.callback(
-    Output("dummy1", "data"),
+    Output("web-urls", "data"),
+    Input("button-open-window", "n_clicks"),
+    State("table-job-list", "data"),
+    State("tab-group","value"),
+    State('table-job-list', 'selected_rows'),
+    prevent_initial_call=True,
+)
+def update_app_url(n_clicks, jobs, tab_value, rows):
+    web_urls = []
+    if bool(rows):
+        for row in rows:
+            if jobs[row]['service_type'] == 'frontend' and 'map' in jobs[row]['job_kwargs']:
+                mapping = jobs[row]['job_kwargs']['map']
+                for key in mapping:
+                    port = mapping.get(key)
+                    port=port[0]["HostPort"]
+                    web_url = "http://localhost:{}".format(port)
+                    web_urls.append(web_url)
+    
+    return web_urls
+
+
+app.clientside_callback(
+    """
+    function(web_urls) {
+        for (let i = 0; i < web_urls.length; i++) { 
+            window.open(web_urls[i]);
+        }
+        return '';
+    }
+    """,
+    Output('dummy1', 'data'),
+    Input('web-urls', 'data'),
+)
+
+
+@app.callback(
+    Output("dummy2", "data"),
     Input("button-terminate", "n_clicks"),
-    Input("table-job-list", "data"),
-    Input("tab-group","value"),
+    State("table-job-list", "data"),
+    State("tab-group","value"),
     State('table-job-list', 'selected_rows'),
     prevent_initial_call=True,
 )

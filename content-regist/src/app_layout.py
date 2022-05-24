@@ -18,7 +18,7 @@ except Exception:
 MODEL_KEYS    = ['name', 'version', 'owner', 'type', 'uri', 'description']
 APP_KEYS      = ['name', 'version', 'owner', 'uri', 'description']
 WORKFLOW_KEYS = ['name', 'version', 'owner', 'workflow_type', 'description']
-JOB_KEYS      = ['description', 'submission_time', 'execution_time', 'job_status']
+JOB_KEYS      = ['description', 'service_type', 'submission_time', 'execution_time', 'job_status']
 
 OWNER = 'mlexchange team'
 
@@ -464,14 +464,6 @@ table_models = dbc.Card(
                 size="sm",
                 n_clicks=0,
             ),
-            dbc.Button(
-                "Open App",
-                id="button-open-window",
-                className="m-2",
-                color="success",
-                size="sm",
-                n_clicks=0,
-            ),
             dbc.Modal(
                 [
                     dbc.ModalHeader("Warning"),
@@ -526,6 +518,14 @@ table_jobs = dbc.Card(
                 size="sm",
                 n_clicks=0,
             ),
+            dbc.Button(
+                "Open the Selected Frontend App(s)",
+                id="button-open-window",
+                className="m-2",
+                color="success",
+                size="sm",
+                n_clicks=0,
+            ),
             html.Div(
                 children = [
                 dash_table.DataTable(
@@ -551,11 +551,10 @@ meta = [
         children=[   
             dcc.Store(id="json-store", data=MODEL_TEMPLATE.copy()),
             dcc.Store(id="nothing", data=''),
-            dcc.Store(id="web-url", data=''),
-            dcc.Store(id="workflow-ids", data=[]),
-            dcc.Store(id="job-type", data=''),
+            dcc.Store(id="web-urls", data=[]),
             dcc.Store(id="dummy", data=''),
             dcc.Store(id="dummy1", data=''),
+            dcc.Store(id="dummy2", data=''),
             dcc.Store(id="table-contents-cache", data=[]),
             dcc.Store(id='validation', data=0),
         ],
