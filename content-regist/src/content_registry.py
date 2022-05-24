@@ -535,7 +535,7 @@ def launch_jobs(n_clicks, rows, data, tab_value):
         compute_dict['job_list'] = job_list
         compute_dict['dependencies'] = dependency
         compute_dict['description'] = 'parallel workflow: ' + job_names
-        if len(job_list)==1:
+        if len(job_list) == 1:
             compute_dict['requirements']['num_nodes'] = 1
         response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
         
