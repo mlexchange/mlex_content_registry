@@ -459,7 +459,7 @@ table_models = dbc.Card(
             dbc.Button(
                 "Launch the Selected",
                 id="button-launch",
-                className="m-2",
+                className="mtb-2",
                 color="success",
                 size="sm",
                 n_clicks=0,
@@ -502,29 +502,38 @@ table_jobs = dbc.Card(
     id ='running-jobs',
     children = [
         dbc.CardBody([
-            dbc.Button(
-                "Refresh Job List",
-                id="button-refresh-jobs",
-                className="mtb-2",
-                color="primary",
-                size="sm",
-                n_clicks=0,
-            ),
-            dbc.Button(
-                "Terminate the Selected",
-                id="button-terminate",
-                className="m-2",
-                color="warning",
-                size="sm",
-                n_clicks=0,
-            ),
-            dbc.Button(
-                "Open the Selected Frontend App(s)",
-                id="button-open-window",
-                className="m-2",
-                color="success",
-                size="sm",
-                n_clicks=0,
+            html.Div(
+                children = [
+                    dbc.Button(
+                        "Refresh Job List",
+                        id="button-refresh-jobs",
+                        className="mtb-2",
+                        color="primary",
+                        size="sm",
+                        n_clicks=0,
+                    ),
+                    dbc.Button(
+                        "Terminate the Selected",
+                        id="button-terminate",
+                        className="m-2",
+                        color="warning",
+                        size="sm",
+                        n_clicks=0,
+                    ),
+                    dbc.Collapse(
+                        children=[dbc.Button(
+                                    "Open the Selected Frontend App(s)",
+                                    id="button-open-window",
+                                    className="mtb-2",
+                                    color="success",
+                                    size="sm",
+                                    n_clicks=0,
+                                  )],
+                        id="collapse-open-app",
+                        is_open=True,
+                    )],
+                className='row',
+                style={'align-items': 'center', 'margin-left': '1px'}
             ),
             html.Div(
                 children = [

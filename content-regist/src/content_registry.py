@@ -66,6 +66,17 @@ def toggle_app_port_inputform(app_type):
         return False
 
 
+@app.callback(
+    Output("collapse-open-app", "is_open"),
+    Input("tab-group","value"),
+)
+def toggle_open_app_button(tab_group):
+    if tab_group == 'app':
+        return True
+    else:
+        return False
+
+
 # might need collapse to handle id not found issues
 @app.callback( 
     Output("tab-display", "children"),
