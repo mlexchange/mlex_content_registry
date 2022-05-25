@@ -12,7 +12,7 @@ services:
     ports:
       - "8000:8000"
     networks:
-      - content_registry_network
+      - computing_api_default
 
   content-registry:
     restart: "unless-stopped"
@@ -29,7 +29,6 @@ services:
     ports:
       - "8051:8051"
     networks:
-      - content_registry_network
       - computing_api_default
 
 volumes: 
@@ -41,8 +40,6 @@ volumes:
       o: "bind"
 
 networks:
-  content_registry_network:
-    driver: bridge
   computing_api_default:
     external: true
 
