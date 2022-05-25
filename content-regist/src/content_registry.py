@@ -72,10 +72,10 @@ def toggle_app_port_inputform(app_type):
     Input("tab-group","value"),
 )
 def toggle_open_app_button(tab_group):
-    if tab_group == 'app':
-        return True
-    else:
+    if tab_group == 'workflow':
         return False
+    else:
+        return True
 
 
 # might need collapse to handle id not found issues
