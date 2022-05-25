@@ -118,7 +118,7 @@ def delete_content(rows, n_click, tab_value):
             for content_id in content_ids:
                 mycollection = conn_mongodb(tab_value+'s') 
                 mycollection.delete_one({"content_id": content_id})
-                send_webhook({"event": "delete_content", "content_id": content_id})
+                send_webhook({"event": "delete_content", "content_id": content_id, "content_type": tab_value})
 
     return get_content_list(tab_value+'s')
 
@@ -392,7 +392,7 @@ def add_new_content(n1, n2, is_valid, json_document):
         if bool(json_document) and is_valid:
             mycollection = conn_mongodb(json_document['content_type']+'s')
             mycollection.insert_one(json_document)
-            send_webhook({"event": "add_content", "content_id": json_document["content_id"]})
+            send_webhook({"event": "add_content", "content_id": json_document["content_id"], "content_type": json_document["content_type"]})
 
     if 'button-register.n_clicks' in changed_id:
         if bool(json_document):
@@ -400,7 +400,7 @@ def add_new_content(n1, n2, is_valid, json_document):
             mycollection.insert_one(json_document)
             msg = {'event': 'add_content', 'content_id': json_document['content_id']}
             print(f'Producer: sending webhook msg {msg}')
-            send_webhook({"event": "add_content", "content_id": json_document["content_id"]})
+            send_webhook({"event": "add_content", "content_id": json_document["content_id"], "content_type": json_document["content_type"]})
 
 
 @app.callback(

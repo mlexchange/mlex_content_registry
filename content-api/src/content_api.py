@@ -131,7 +131,7 @@ def add_asset(content: dict):
     content["content_id"] = str(uuid.uuid4())
     mycollection = conn_mongodb('assets')
     mycollection.insert_one(content)
-    send_webhook({"event": "add_content", "content_id": content["content_id"]})
+    send_webhook({"event": "add_content", "content_id": content["content_id"], "content_type": "asset"})
     return content["content_id"]
 
 
@@ -156,7 +156,7 @@ def delete_assets(uids: list):
     mycollection = conn_mongodb('assets')
     mycollection.delete_many({'content_id':{'$in':uids}})
     for uid in uids:
-        send_webhook({"event": "delete_content", "content_id": uid})
+        send_webhook({"event": "delete_content", "content_id": uid, "content_type": "asset"})
     
     
 #----------------------- webhook --------------------------
