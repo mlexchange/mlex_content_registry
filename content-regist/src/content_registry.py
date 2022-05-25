@@ -15,9 +15,10 @@ import json
 import base64
 import requests
 
-from utility import conn_mongodb, get_content_list, get_dropdown_options, get_schema, validate_json, \
-                    is_duplicate, update_mongodb, remove_key_from_dict_list, get_content, send_webhook
-from generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
+from registry_util import conn_mongodb, get_content_list, get_dropdown_options, get_schema, \
+                    validate_json, is_duplicate, update_mongodb, remove_key_from_dict_list, \
+                    get_content, job_content_dict, send_webhook
+from form_generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
                       make_form_bool, make_form_graph
 
 from targeted_callbacks import targeted_callback
@@ -486,19 +487,6 @@ def download_model(n_clicks, data):
 
 
 #---------------------------------- launch jobs ------------------------------------------
-def job_content_dict(content):
-    job_content = {'mlex_app': content['name'],
-                   'service_type': content['service_type'],
-                   'working_directory': '',
-                   'job_kwargs': {'uri': content['uri'], 
-                                  'cmd': content['cmd'][0]}
-    }
-    if 'map' in content:
-        job_content['job_kwargs']['map'] = content['map']
-    
-    return job_content
-
-
 @app.callback(
     Output("dummy", "data"),
     Input("button-launch", "n_clicks"),

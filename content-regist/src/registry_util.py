@@ -153,6 +153,19 @@ def workflow_dependency(workflow):
 #             dependencies[workflow_id].extend(workflow_dependency_list)
 
 
+def job_content_dict(content):
+    job_content = {'mlex_app': content['name'],
+                   'service_type': content['service_type'],
+                   'working_directory': '',
+                   'job_kwargs': {'uri': content['uri'], 
+                                  'cmd': content['cmd'][0]}
+    }
+    if 'map' in content:
+        job_content['job_kwargs']['map'] = content['map']
+    
+    return job_content
+
+
 def send_webhook(msg):
     """
     Send a webhook to a specified URL

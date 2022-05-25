@@ -10,7 +10,7 @@ from fastapi import FastAPI
 import requests
 from pydantic import BaseModel, ValidationError
 
-from content_api_util import send_webhook
+from api_util import send_webhook
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
@@ -25,9 +25,8 @@ def conn_mongodb(collection='models'):
     return db[collection]
     
 mycollection = conn_mongodb()
-model_list = list(mycollection.find({}).sort("name",pymongo.ASCENDING))
 try:
-    print(f"model list:\n{model_list}")
+    model_list = list(mycollection.find({}).sort("name",pymongo.ASCENDING))
 except Exception:
     print("Unable to connect to the server.")
 

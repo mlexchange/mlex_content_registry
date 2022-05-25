@@ -6,12 +6,11 @@ import dash_html_components as html
 import dash_core_components as dcc
 import dash_table
 
-from utility import get_content_list
+from registry_util import get_content_list
 
 job_list = []
-model_list = get_content_list()
 try:
-    print(f"model list:\n{model_list}")
+    model_list = get_content_list()
 except Exception:
     print("Unable to connect to the server.")
 
