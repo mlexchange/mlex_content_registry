@@ -15,9 +15,10 @@ import json
 import base64
 import requests
 
-from utility import conn_mongodb, get_content_list, get_dropdown_options, get_schema, validate_json, \
-                    is_duplicate, update_mongodb, remove_key_from_dict_list, get_content
-from generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
+from registry_util import conn_mongodb, get_content_list, get_dropdown_options, get_schema, \
+                    validate_json, is_duplicate, update_mongodb, remove_key_from_dict_list, \
+                    get_content, job_content_dict, send_webhook
+from form_generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
                       make_form_bool, make_form_graph
 
 from targeted_callbacks import targeted_callback
@@ -66,6 +67,17 @@ def toggle_app_port_inputform(app_type):
         return False
 
 
+@app.callback(
+    Output("collapse-open-app", "is_open"),
+    Input("tab-group","value"),
+)
+def toggle_open_app_button(tab_group):
+    if tab_group == 'workflow':
+        return False
+    else:
+        return True
+
+
 # might need collapse to handle id not found issues
 @app.callback( 
     Output("tab-display", "children"),
@@ -93,7 +105,7 @@ def update_layout(tab_value):
     Input('confirm-delete', 'n_clicks'),
     State("tab-group","value")
     )
-def update_regist(rows, n_click, tab_value):
+def delete_content(rows, n_click, tab_value):
     content_list = get_content_list(tab_value+'s')
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'confirm-delete' in changed_id:
@@ -106,6 +118,7 @@ def update_regist(rows, n_click, tab_value):
             for content_id in content_ids:
                 mycollection = conn_mongodb(tab_value+'s') 
                 mycollection.delete_one({"content_id": content_id})
+                send_webhook({"event": "delete_content", "content_id": content_id, "content_type": tab_value})
 
     return get_content_list(tab_value+'s')
 
@@ -379,11 +392,15 @@ def add_new_content(n1, n2, is_valid, json_document):
         if bool(json_document) and is_valid:
             mycollection = conn_mongodb(json_document['content_type']+'s')
             mycollection.insert_one(json_document)
+            send_webhook({"event": "add_content", "content_id": json_document["content_id"], "content_type": json_document["content_type"]})
 
     if 'button-register.n_clicks' in changed_id:
         if bool(json_document):
             mycollection = conn_mongodb(json_document['content_type']+'s')
             mycollection.insert_one(json_document)
+            msg = {'event': 'add_content', 'content_id': json_document['content_id']}
+            print(f'Producer: sending webhook msg {msg}')
+            send_webhook({"event": "add_content", "content_id": json_document["content_id"], "content_type": json_document["content_type"]})
 
 
 @app.callback(
@@ -470,22 +487,8 @@ def download_model(n_clicks, data):
 
 
 #---------------------------------- launch jobs ------------------------------------------
-def job_content_dict(content):
-    job_content = {'mlex_app': content['name'],
-                   'service_type': content['service_type'],
-                   'working_directory': '',
-                   'job_kwargs': {'uri': content['uri'], 
-                                  'cmd': content['cmd'][0]}
-    }
-    if 'map' in content:
-        job_content['job_kwargs']['map'] = content['map']
-    
-    return job_content
-
-
 @app.callback(
-    Output("workflow-ids", "data"),
-    Output("job-type", "data"),
+    Output("dummy", "data"),
     Input("button-launch", "n_clicks"),
     State('table-model-list', 'selected_rows'),
     State("table-contents-cache", "data"),
@@ -493,14 +496,12 @@ def job_content_dict(content):
     prevent_initial_call=True,
 )
 def launch_jobs(n_clicks, rows, data, tab_value):
-    web_url = ''
     compute_dict = {'user_uid': '001',
                     'host_list': ['mlsandbox.als.lbl.gov', 'local.als.lbl.gov', 'vaughan.als.lbl.gov'],
                     'requirements': {'num_processors': 2,
                                      'num_gpus': 0,
                                      'num_nodes': 2},
                     }
-    workflow_ids = []
     if tab_value == 'workflow':
         for row in rows:
             job_list = []
@@ -519,7 +520,6 @@ def launch_jobs(n_clicks, rows, data, tab_value):
             if len(job_list)==1:
                 compute_dict['requirements']['num_nodes'] = 1
             response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-            workflow_ids.append(response.json())
     
     elif tab_value == 'model' or tab_value == 'app':
         job_list = []
@@ -534,51 +534,11 @@ def launch_jobs(n_clicks, rows, data, tab_value):
         compute_dict['job_list'] = job_list
         compute_dict['dependencies'] = dependency
         compute_dict['description'] = 'parallel workflow: ' + job_names
-        if len(job_list)==1:
+        if len(job_list) == 1:
             compute_dict['requirements']['num_nodes'] = 1
         response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-        workflow_ids.append(response.json())
         
-    return workflow_ids, tab_value
-
-
-@app.callback(
-    Output("web-url", "data"),
-    Input("button-open-window", "n_clicks"),
-    State("workflow-ids", "data"),
-)
-def update_web_url(n_clicks, uids):
-    web_url = ''
-    if bool(uids): 
-        uid = uids[0]
-        port_url = 'http://job-service:8080/api/v0/workflows/{}/mapping'.format(uid)
-        print(f'port_url {port_url}')
-        response = requests.get(port_url).json()
-        print(f'response {response}')
-        for key1 in response:
-            value1 = response.get(key1)
-            for key2 in value1:
-                port = value1.get(key2)
-                port=port[0]["HostPort"]
-                print(f'port {port}')
-                web_url = "http://localhost:{}".format(port)
-    
-    return web_url
-
-
-app.clientside_callback(
-    """
-    function(web_url, job_type) {
-        if (job_type == 'app'){
-            window.open(web_url);
-        }
-        return '';
-    }
-    """,
-    Output('dummy', 'data'),
-    Input('web-url', 'data'),
-    State('job-type', 'data')
-)
+    return ''
 
 
 @app.callback(
@@ -613,10 +573,47 @@ def jobs_table(n, tab_value):
 
 
 @app.callback(
-    Output("dummy1", "data"),
+    Output("web-urls", "data"),
+    Input("button-open-window", "n_clicks"),
+    State("table-job-list", "data"),
+    State("tab-group","value"),
+    State('table-job-list', 'selected_rows'),
+    prevent_initial_call=True,
+)
+def update_app_url(n_clicks, jobs, tab_value, rows):
+    web_urls = []
+    if bool(rows):
+        for row in rows:
+            if jobs[row]['service_type'] == 'frontend' and 'map' in jobs[row]['job_kwargs']:
+                mapping = jobs[row]['job_kwargs']['map']
+                for key in mapping:
+                    port = mapping.get(key)
+                    port=port[0]["HostPort"]
+                    web_url = "http://localhost:{}".format(port)
+                    web_urls.append(web_url)
+    
+    return web_urls
+
+
+app.clientside_callback(
+    """
+    function(web_urls) {
+        for (let i = 0; i < web_urls.length; i++) { 
+            window.open(web_urls[i]);
+        }
+        return '';
+    }
+    """,
+    Output('dummy1', 'data'),
+    Input('web-urls', 'data'),
+)
+
+
+@app.callback(
+    Output("dummy2", "data"),
     Input("button-terminate", "n_clicks"),
-    Input("table-job-list", "data"),
-    Input("tab-group","value"),
+    State("table-job-list", "data"),
+    State("tab-group","value"),
     State('table-job-list', 'selected_rows'),
     prevent_initial_call=True,
 )

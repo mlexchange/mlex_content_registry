@@ -6,19 +6,18 @@ import dash_html_components as html
 import dash_core_components as dcc
 import dash_table
 
-from utility import get_content_list
+from registry_util import get_content_list
 
 job_list = []
-model_list = get_content_list()
 try:
-    print(f"model list:\n{model_list}")
+    model_list = get_content_list()
 except Exception:
     print("Unable to connect to the server.")
 
 MODEL_KEYS    = ['name', 'version', 'owner', 'type', 'uri', 'description']
 APP_KEYS      = ['name', 'version', 'owner', 'uri', 'description']
 WORKFLOW_KEYS = ['name', 'version', 'owner', 'workflow_type', 'description']
-JOB_KEYS      = ['description', 'submission_time', 'execution_time', 'job_status']
+JOB_KEYS      = ['description', 'service_type', 'submission_time', 'execution_time', 'job_status']
 
 OWNER = 'mlexchange team'
 
@@ -31,6 +30,7 @@ MODEL_TEMPLATE = {
     "owner": OWNER,
     "service_type": "backend",
     "uri": "xxx",
+    "reference": "xxx",
     "application": [],
     "description": "xxx",
     "gui_parameters": [],
@@ -47,6 +47,7 @@ APP_TEMPLATE = {
     "owner": OWNER,
     "service_type": "frontend",
     "uri": "xxx",
+    "reference": "xxx",
     "application": [],
     "description": "xxx",
     "cmd": [],
@@ -61,6 +62,7 @@ WORKFLOW_TEMPLATE = {
     "version": "xxx",
     "owner": OWNER,
     "uri": "xxx",
+    "reference": "xxx",
     "application": [],
     "workflow_type": "serial",
     "workflow_list": [],
@@ -459,15 +461,7 @@ table_models = dbc.Card(
             dbc.Button(
                 "Launch the Selected",
                 id="button-launch",
-                className="m-2",
-                color="success",
-                size="sm",
-                n_clicks=0,
-            ),
-            dbc.Button(
-                "Open App",
-                id="button-open-window",
-                className="m-2",
+                className="mtb-2",
                 color="success",
                 size="sm",
                 n_clicks=0,
@@ -510,21 +504,38 @@ table_jobs = dbc.Card(
     id ='running-jobs',
     children = [
         dbc.CardBody([
-            dbc.Button(
-                "Refresh Job List",
-                id="button-refresh-jobs",
-                className="mtb-2",
-                color="primary",
-                size="sm",
-                n_clicks=0,
-            ),
-            dbc.Button(
-                "Terminate the Selected",
-                id="button-terminate",
-                className="m-2",
-                color="warning",
-                size="sm",
-                n_clicks=0,
+            html.Div(
+                children = [
+                    dbc.Button(
+                        "Refresh Job List",
+                        id="button-refresh-jobs",
+                        className="mtb-2",
+                        color="primary",
+                        size="sm",
+                        n_clicks=0,
+                    ),
+                    dbc.Button(
+                        "Terminate the Selected",
+                        id="button-terminate",
+                        className="m-2",
+                        color="warning",
+                        size="sm",
+                        n_clicks=0,
+                    ),
+                    dbc.Collapse(
+                        children=[dbc.Button(
+                                    "Open the Selected Frontend App(s)",
+                                    id="button-open-window",
+                                    className="mtb-2",
+                                    color="success",
+                                    size="sm",
+                                    n_clicks=0,
+                                  )],
+                        id="collapse-open-app",
+                        is_open=True,
+                    )],
+                className='row',
+                style={'align-items': 'center', 'margin-left': '1px'}
             ),
             html.Div(
                 children = [
@@ -551,11 +562,10 @@ meta = [
         children=[   
             dcc.Store(id="json-store", data=MODEL_TEMPLATE.copy()),
             dcc.Store(id="nothing", data=''),
-            dcc.Store(id="web-url", data=''),
-            dcc.Store(id="workflow-ids", data=[]),
-            dcc.Store(id="job-type", data=''),
+            dcc.Store(id="web-urls", data=[]),
             dcc.Store(id="dummy", data=''),
             dcc.Store(id="dummy1", data=''),
+            dcc.Store(id="dummy2", data=''),
             dcc.Store(id="table-contents-cache", data=[]),
             dcc.Store(id='validation', data=0),
         ],
