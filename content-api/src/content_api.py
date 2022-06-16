@@ -160,6 +160,8 @@ def delete_assets(uids: list):
     
     
 #----------------------- webhook --------------------------
+KEYS = ["name", "version", "type", "uri", "application", "reference", "description", "content_type", "content_id", "owner"]
+
 @app.post(API_URL_PREFIX + '/receiver', status_code=201, tags = ['Webhook'])
 def webhook_receiver(msg: dict):
     content_id = msg['content_id']
@@ -174,7 +176,9 @@ def webhook_receiver(msg: dict):
             if key in KEYS:
                 content_data[key] = value
         requests.post('http://search-api:8060/api/v0/index/document', params = params, json = content_data)
+        #requests.post('http://user-api:5003/api/v0/content', params = params, json = content_data)
     elif msg['event'] == 'delete_content':
         requests.delete(f'http://search-api:8060/api/v0/index/{content_type}/document/{content_id}')
+        #requests.delete('http://user-api:5003/api/v0/content/{content_id}', params = params, json = content_data)
 
 
