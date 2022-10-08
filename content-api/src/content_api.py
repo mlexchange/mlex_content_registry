@@ -15,6 +15,8 @@ from api_util import send_webhook
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 MONGO_DB_URI = "mongodb+srv://admin:%s" % config['content database']['ATLAS_ADMIN']
+USER_API_PORT = config['user api port']['USER_API_PORT']
+SEARCH_API_PORT = config['search api port']['SEARCH_API_PORT']
 
 #connecting to mongoDB Atlas
 def conn_mongodb(collection='models'):
@@ -160,27 +162,36 @@ def delete_assets(uids: list):
     
     
 #----------------------- webhook --------------------------
-@app.post(API_URL_PREFIX+"/webhook", tags=['webhook'])
-def add_webhook(msg: dict):
-    """
-    Add a webhook msg.  
-      - Args: dict 
-    """
-    msg["_id"] = str(uuid.uuid4())
-    mycollection = conn_mongodb('events')
-    mycollection.insert_one(msg)
-    print(f'Receiver: posting webhook msg {msg}')
-    return msg
+search_keys = ["name", "version", "type", "uri", "application", "reference", "description", "content_type", "content_id", "owner"]
+user_keys   = ["name", "owner", "content_type", "content_id", "public"]
 
-
-@app.get(API_URL_PREFIX+"/webhook", tags=['webhook'])
-def get_webhook():
-    """
-    Get webhook msgs.  
-      - Args: dict 
-    """
-    mycollection = conn_mongodb('events')
-    return list(mycollection.find({}))
-
+@app.post(API_URL_PREFIX + '/receiver', status_code=201, tags = ['Webhook'])
+def webhook_receiver(msg: dict):
+    content_id = msg['content_id']
+    content_type = msg['content_type']
+    params = {
+        'index': content_type,
+        'doc_id': content_id}
+    if msg['event'] == 'add_content':
+        content = requests.get(f'http://content-api:8000/api/v0/contents/{content_id}/content').json()
+        search_data = {}
+        user_data = {}
+        for key, value in content.items():
+            if key in search_keys:
+                search_data[key] = value
+            if key in user_keys:
+                if key == 'content_type':
+                    user_data["type"] = value
+                elif key == 'content_id':
+                    user_data["content_uid"] = value
+                else:
+                    user_data[key] = value
+                    
+        requests.post(f'http://search-api:{SEARCH_API_PORT}/api/v0/index/document', params = params, json = search_data)
+        #requests.post(f'http://user-api:{USER_API_PORT}/api/v0/content', json = user_data)
+    
+    elif msg['event'] == 'delete_content':
+        requests.delete(f'http://search-api:{SEARCH_API_PORT}/api/v0/index/{content_type}/document/{content_id}')
+        #requests.delete(f'http://user-api:{USER_API_PORT}/api/v0/content/{content_id}')
 
 
