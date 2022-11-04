@@ -37,7 +37,7 @@ class SimpleItem(dbc.FormGroup):
         
         if param_key == None:
             param_key = name
-        self.label = dbc.Label(title or name)
+        self.label = dbc.Label(title)
         self.input = dbc.Input(type=type,
                                debounce=debounce,
                                id={**base_id,
@@ -76,7 +76,7 @@ class SliderItem(dbc.FormGroup):
         
         if param_key == None:
             param_key = name
-        self.label = dbc.Label(title or name)
+        self.label = dbc.Label(title)
         self.input = dcc.Slider(id={**base_id,
                                     'name': name,
                                     'param_key': param_key,
@@ -108,7 +108,7 @@ class DropdownItem(dbc.FormGroup):
 
         if param_key == None:
             param_key = name
-        self.label = dbc.Label(title or name)
+        self.label = dbc.Label(title)
         self.input = dcc.Dropdown(id={**base_id,
                                     'name': name,
                                     'param_key': param_key,
@@ -138,7 +138,7 @@ class RadioItem(dbc.FormGroup):
 
         if param_key == None:
             param_key = name
-        self.label = dbc.Label(title or name)
+        self.label = dbc.Label(title)
         self.input = dbc.RadioItems(id={**base_id,
                                         'name': name,
                                         'param_key': param_key,
@@ -168,7 +168,7 @@ class BoolItem(dbc.FormGroup):
 
         if param_key == None:
             param_key = name
-        self.label = dbc.Label(title or name)
+        self.label = dbc.Label(title)
         self.input = daq.ToggleSwitch(id={**base_id,
                                           'name': name,
                                           'param_key': param_key,
@@ -202,7 +202,7 @@ class ImgItem(dbc.FormGroup):
 
         if param_key == None:
             param_key = name
-        self.label = dbc.Label(title or name)
+        self.label = dbc.Label(title)
         
         encoded_image = base64.b64encode(open(src, 'rb').read())
         self.src = 'data:image/png;base64,{}'.format(encoded_image.decode())
@@ -239,7 +239,7 @@ class GraphItem(dbc.FormGroup):
         self.name = name
         if param_key == None:
             param_key = name
-        self.label = dbc.Label(title or name)
+        self.label = dbc.Label(title)
         self.input_graph = dcc.Graph(id={**base_id,
                                     'name': name,
                                     'param_key': param_key,

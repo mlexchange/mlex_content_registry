@@ -7,7 +7,7 @@ def make_form_input(i):
     form_input = dbc.Form(
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="component id (unique for each component)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title (optional, default is component id)"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title (optional)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},   type="text", placeholder="parameter key (optional, default is component id)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="text", placeholder="default value (optional)"),
             group_label,
@@ -19,7 +19,7 @@ def make_form_slider(i):
     form_slider = dbc.Form(
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="component id (unique for each component)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title (optional, default is component id)"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title (optional)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},   type="text", placeholder="parameter key (optional, default is component id)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "min"},   type="number", placeholder="min"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "max"},   type="number", placeholder="max"),
@@ -37,7 +37,7 @@ def make_form_dropdown(i):
     form_dropdown = dbc.Form(
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},   type="text", placeholder="component id (unique for each component)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"},  type="text", placeholder="title (optional, default is component id)"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"},  type="text", placeholder="title (optional)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},    type="text", placeholder="parameter key (optional, default is component id)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"},  type="text", placeholder="default value (optional)"),
             dbc.Label("Input options following: label1, value1, label2, value2..."),
@@ -52,7 +52,7 @@ def make_form_radio(i):
     form_radio = dbc.Form(
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},    type="text", placeholder="component id (unique for each component)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"},   type="text", placeholder="title (optional, default is component id)"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"},   type="text", placeholder="title (optional)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},     type="text", placeholder="parameter key (optional, default is component id)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"},   type="text", placeholder="default value (optional)"),
             dbc.Label("Input options following: label1, value1, label2, value2..."),
@@ -67,7 +67,7 @@ def make_form_bool(i):
     form_bool = dbc.Form(
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="component id (unique for each component)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title (optional, default is component id)"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title (optional)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"},   type="text", placeholder="parameter key (optional, default is component id)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "value"}, type="text", placeholder="default value (optional, default is False)"),
             group_label,
@@ -81,7 +81,7 @@ def make_form_img(i):
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="component id (unique for each component)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "src"}, type="text", placeholder="image src (required, full docker path)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title (optional, default is component id)"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title (optional)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"}, type="text", placeholder="parameter key (optional, default is component id)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "height"}, type="text", placeholder="image height (optional, default is 100%)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "width"}, type="text", placeholder="image width (optional, default is 100%)"),
@@ -95,7 +95,7 @@ def make_form_graph(i):
     form_graph = dbc.Form(
         [
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "name"},  type="text", placeholder="component id (unique for each component)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title (optional, default is component id)"),
+            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title (optional)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"}, type="text", placeholder="parameter key (optional, default is component id)"),
             group_label,
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "comp_group"}, type="text", value = 'all', placeholder="group key (optional, default is all)")
