@@ -344,7 +344,6 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                             component_combo["value"] = False
 
                     json_document["gui_parameters"].append(component_combo)
-                    print(f'gui_parameters\n{json_document["gui_parameters"]}')
             else:
                 print('No gui component is added!')
 
