@@ -34,8 +34,9 @@ class SimpleItem(dbc.FormGroup):
                  type='number',
                  debounce=True,
                  **kwargs):
-        self.name = name
-
+        
+        if param_key == None:
+            param_key = name
         self.label = dbc.Label(title or name)
         self.input = dbc.Input(type=type,
                                debounce=debounce,
@@ -61,8 +62,8 @@ class IntItem(SimpleItem):
 class StrItem(SimpleItem):
     def __init__(self, *args, **kwargs):
         super(StrItem, self).__init__(*args, type='text', **kwargs)
-        
-        
+
+
 class SliderItem(dbc.FormGroup):
     def __init__(self,
                  name,       
@@ -72,7 +73,9 @@ class SliderItem(dbc.FormGroup):
                  debounce=True,
                  visible=True,
                  **kwargs):
-
+        
+        if param_key == None:
+            param_key = name
         self.label = dbc.Label(title or name)
         self.input = dcc.Slider(id={**base_id,
                                     'name': name,
@@ -103,6 +106,8 @@ class DropdownItem(dbc.FormGroup):
                  visible=True,
                  **kwargs):
 
+        if param_key == None:
+            param_key = name
         self.label = dbc.Label(title or name)
         self.input = dcc.Dropdown(id={**base_id,
                                     'name': name,
@@ -131,6 +136,8 @@ class RadioItem(dbc.FormGroup):
                  visible=True,
                  **kwargs):
 
+        if param_key == None:
+            param_key = name
         self.label = dbc.Label(title or name)
         self.input = dbc.RadioItems(id={**base_id,
                                         'name': name,
@@ -159,6 +166,8 @@ class BoolItem(dbc.FormGroup):
                  visible=True,
                  **kwargs):
 
+        if param_key == None:
+            param_key = name
         self.label = dbc.Label(title or name)
         self.input = daq.ToggleSwitch(id={**base_id,
                                           'name': name,
@@ -179,6 +188,44 @@ class BoolItem(dbc.FormGroup):
                                        style=style)
 
 
+class ImgItem(dbc.FormGroup):
+    def __init__(self,
+                 name,
+                 src,
+                 base_id,
+                 title=None,
+                 param_key=None,
+                 height='100%',
+                 width='100%',
+                 visible=True,
+                 **kwargs):
+
+        if param_key == None:
+            param_key = name
+        self.label = dbc.Label(title or name)
+        
+        encoded_image = base64.b64encode(open(src, 'rb').read())
+        self.src = 'data:image/png;base64,{}'.format(encoded_image.decode())
+        self.input_img = html.Img(id={**base_id,
+                                     'name': name,
+                                     'param_key': param_key,
+                                     'layer': 'input'},
+                                     src=self.src,
+                                     style={'height': height, 'width':width},
+                                  **kwargs)
+
+        style = {}
+        if not visible:
+            style['display'] = 'none'
+
+        super(ImgItem, self).__init__(id={**base_id,
+                                           'name': name,
+                                           'param_key': param_key,
+                                           'layer': 'form_group'},
+                                       children=[self.label, self.input_img],
+                                       style=style)
+
+
 class GraphItem(dbc.FormGroup):
     def __init__(self,
                  name,
@@ -190,15 +237,17 @@ class GraphItem(dbc.FormGroup):
                  **kwargs):
 
         self.name = name
+        if param_key == None:
+            param_key = name
         self.label = dbc.Label(title or name)
         self.input_graph = dcc.Graph(id={**base_id,
-                                    'name': self.name,
+                                    'name': name,
                                     'param_key': param_key,
                                     'layer': 'input'},
-                                **kwargs)
+                                    **kwargs)
                                 
         self.input_upload = dcc.Upload(id={**base_id,
-                                    'name': self.name+'_upload',
+                                    'name': name+'_upload',
                                     'param_key': param_key,
                                     'layer': 'input'},
                                     children=html.Div([
@@ -222,7 +271,7 @@ class GraphItem(dbc.FormGroup):
             style['display'] = 'none'
 
         super(GraphItem, self).__init__(id={**base_id,
-                                           'name': self.name,
+                                           'name': name,
                                            'param_key': param_key,
                                            'layer': 'form_group'},
                                        children=[self.label, self.input_upload, self.input_graph],
@@ -333,6 +382,7 @@ class JSONParameterEditor(ParameterEditor):
                 'dropdown': DropdownItem,
                 'radio': RadioItem,
                 'bool': BoolItem,
+                'img': ImgItem,
                 'graph': GraphItem,
                 }
 
