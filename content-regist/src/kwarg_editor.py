@@ -195,7 +195,6 @@ class ImgItem(dbc.FormGroup):
                  base_id,
                  title=None,
                  param_key=None,
-                 height='100%',
                  width='100%',
                  visible=True,
                  **kwargs):
@@ -211,7 +210,7 @@ class ImgItem(dbc.FormGroup):
                                      'param_key': param_key,
                                      'layer': 'input'},
                                      src=self.src,
-                                     style={'height': height, 'width':width},
+                                     style={'height': 'auto', 'width':width},
                                   **kwargs)
 
         style = {}

@@ -83,7 +83,6 @@ def make_form_img(i):
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "src"}, type="text", placeholder="image src (required, full docker path)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "title"}, type="text", placeholder="title (optional)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "param_key"}, type="text", placeholder="parameter key (optional, default is component id)"),
-            dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "height"}, type="text", placeholder="image height (optional, default is 100%)"),
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "width"}, type="text", placeholder="image width (optional, default is 100%)"),
             group_label,
             dbc.Input(id={"type": "dynamic-component", "index": i, "subtype": "comp_group"}, type="text", value = 'all', placeholder="group key (optional, default is all)")
