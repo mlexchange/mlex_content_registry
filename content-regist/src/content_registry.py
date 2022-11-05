@@ -19,7 +19,7 @@ from registry_util import conn_mongodb, get_content_list, get_dropdown_options, 
                     validate_json, is_duplicate, update_mongodb, remove_key_from_dict_list, \
                     get_content, job_content_dict, send_webhook
 from form_generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
-                      make_form_bool, make_form_graph
+                      make_form_bool, make_form_img, make_form_graph
 
 from targeted_callbacks import targeted_callback
 from kwarg_editor import JSONParameterEditor
@@ -123,6 +123,8 @@ def delete_content(rows, n_click, tab_value):
     return get_content_list(tab_value+'s')
 
 
+comp_labels = ['input form (int)', 'input form (float)', 'input form (str)', 'slider','dropdown','radio items','boolean toggle switch','image', 'graph uploader']
+comp_values = ['int', 'float', 'str', 'slider', 'dropdown', 'radio', 'bool', 'img', 'graph']
 @app.callback(
     Output('dynamic-gui-container', 'children'),
     Input('gui-component-add', 'n_clicks'),
@@ -135,7 +137,7 @@ def display_component(n_clicks, children):
                 'type': 'dynamic-dropdown',
                 'index': n_clicks
             },
-            options=[{'label': i, 'value': i} for i in ['int', 'float', 'str', 'slider','dropdown','radio','bool','graph']]
+            options=[{'label': l, 'value': v} for l, v in zip(comp_labels,comp_values)]
         ),
         html.Div(
             id={
@@ -157,7 +159,7 @@ def display_component(n_clicks, children):
 )
 def display_output(value, n_cliks):
     i = int(re.findall('(?<="index":)\\d+(?=,)', dash.callback_context.triggered[0]['prop_id'])[0])
-    if value in ['float','int','str']:
+    if value in ['int','float','str']:
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_input(i)])
     elif value == 'dropdown':
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_dropdown(i)])
@@ -167,6 +169,8 @@ def display_output(value, n_cliks):
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_radio(i)])
     elif value == 'bool':
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_bool(i)])
+    elif value == 'img':
+        return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_img(i)])
     elif value == 'graph':
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_graph(i)])
     else:
@@ -326,8 +330,8 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                                 component_combo[input_type] = options
                             else:
                                 component_combo[input_type] = input_value
-                        else:
-                            print('No value is found in the input form yet')
+#                         else:
+#                             print('No value is found in the input form yet')
 
                     if component_combo["type"] == "int" and "value" in component_combo:
                         component_combo["value"] = int(component_combo["value"])
