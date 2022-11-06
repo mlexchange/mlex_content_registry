@@ -195,12 +195,16 @@ class ImgItem(dbc.FormGroup):
                  base_id,
                  title=None,
                  param_key=None,
-                 width='100%',
+                 width='100px',
                  visible=True,
                  **kwargs):
 
         if param_key == None:
             param_key = name
+        
+        if not (width.endswith('px') or width.endswith('%')):
+            width = width + 'px'
+        
         self.label = dbc.Label(title)
         
         encoded_image = base64.b64encode(open(src, 'rb').read())
@@ -210,7 +214,7 @@ class ImgItem(dbc.FormGroup):
                                      'param_key': param_key,
                                      'layer': 'input'},
                                      src=self.src,
-                                     style={'height': 'auto', 'width':width},
+                                     style={'height':'auto', 'width':width},
                                   **kwargs)
 
         style = {}
