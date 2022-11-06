@@ -109,7 +109,7 @@ def delete_content(rows, n_click, tab_value):
     content_list = get_content_list(tab_value+'s')
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'confirm-delete' in changed_id:
-        if bool(rows):
+        if rows:
             content_ids = [] 
             for row in rows:
                 if 'content_id' in content_list[row]:
@@ -280,10 +280,10 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
         keys = ["name","version","type","uri","reference", "description", "public", "service_type"]
         items = [name, version, model_type, uri, reference, description, access_type, service_type]
         for item,key in zip(items,keys):
-            if key in json_document and bool(item):
+            if key in json_document and item:
                 json_document[key] = item
 
-        if bool(applications):
+        if applications:
             applications = applications.split(",")
             for application in applications:
                 if application not in json_document["application"]:
@@ -297,14 +297,14 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                 json_document["compute_resources"] = {"num_processors": app_cpu_num,
                                                       "num_gpus": app_gpu_num}
         
-        if "cmd" in json_document and bool(cmds):
+        if "cmd" in json_document and cmds:
             cmds = cmds.split(",")
             for cmd in cmds:
                 if cmd not in json_document["cmd"]:
                     json_document["cmd"].append(cmd)
         
         if content_type == 'model':
-            if children[0]['props']['children'][2]['props']['children'] is not None and bool(component_type):
+            if children[0]['props']['children'][2]['props']['children'] is not None and component_type:
                 for k,child in enumerate(children):
                     input_items = child['props']['children'][2]['props']['children']['props']['children'][1]['props']['children']
                     length = len(input_items)
@@ -342,13 +342,12 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                             component_combo["value"] = True
                         else:
                             component_combo["value"] = False
-
                     json_document["gui_parameters"].append(component_combo)
             else:
                 print('No gui component is added!')
 
         if content_type == 'workflow':
-            if bool(workflow_type):
+            if workflow_type:
                 json_document["workflow_type"] = workflow_type
             
             workflow_list = []
@@ -358,7 +357,7 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                 json_document["workflow_list"] = workflow_list
                 
         if content_type == 'app':
-            if json_document["service_type"] == 'frontend' and bool(ports):
+            if json_document["service_type"] == 'frontend' and ports:
                 json_document["map"] = {}
                 ports = ports.split(",")
                 for port in ports:
@@ -393,13 +392,13 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
 def add_new_content(n1, n2, is_valid, json_document):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-upload.n_clicks' in changed_id:
-        if bool(json_document) and is_valid:
+        if json_document and is_valid:
             mycollection = conn_mongodb(json_document['content_type']+'s')
             mycollection.insert_one(json_document)
             send_webhook({"event": "add_content", "content_id": json_document["content_id"], "content_type": json_document["content_type"]})
 
     if 'button-register.n_clicks' in changed_id:
-        if bool(json_document):
+        if json_document:
             mycollection = conn_mongodb(json_document['content_type']+'s')
             mycollection.insert_one(json_document)
             msg = {'event': 'add_content', 'content_id': json_document['content_id']}
@@ -416,7 +415,7 @@ def add_new_content(n1, n2, is_valid, json_document):
 def validate_json_schema(n, data):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-validate' in changed_id:
-        if bool(data):
+        if data:
             is_valid, msg = validate_json(data, data['content_type'])
             return [str(msg),is_valid]
         else:
@@ -433,7 +432,7 @@ def show_dynamic_gui_layouts(n_clicks):
     data = dash.callback_context.states["json-store.data"]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'gui-check' in changed_id and 'gui_parameters' in data:
-        if bool(data["gui_parameters"]):                    
+        if data["gui_parameters"]:                    
             item_list = JSONParameterEditor( _id={'type': 'parameter_editor'},   # pattern match _id (base id), name
                                              json_blob=remove_key_from_dict_list(data["gui_parameters"], "comp_group"),
                                             )
@@ -456,7 +455,7 @@ def show_gui_layouts(n_clicks):
     data = dash.callback_context.states["json-store.data"]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-validate' in changed_id and 'gui_parameters' in data:
-        if bool(data["gui_parameters"]):
+        if data["gui_parameters"]:
             is_valid, msg = validate_json(data, data['content_type'])
             if is_valid:
                 item_list = JSONParameterEditor(_id={'type': 'parameter_editor'},   # pattern match _id (base id), name
@@ -586,7 +585,7 @@ def jobs_table(n, tab_value):
 )
 def update_app_url(n_clicks, jobs, tab_value, rows):
     web_urls = []
-    if bool(rows):
+    if rows:
         for row in rows:
             if jobs[row]['service_type'] == 'frontend' and 'map' in jobs[row]['job_kwargs']:
                 mapping = jobs[row]['job_kwargs']['map']
@@ -622,7 +621,7 @@ app.clientside_callback(
     prevent_initial_call=True,
 )
 def terminate_jobs(n_clicks, jobs, tab_value, rows):
-    if bool(rows):
+    if rows:
         for row in rows:
             job_id = jobs[row]['uid']
             print(f'terminate uid {job_id}')

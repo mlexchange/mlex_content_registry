@@ -63,7 +63,7 @@ def get_content(uid: str):
     found = None
     for coll in ['models', 'apps', 'workflows', 'assets']:
         found = conn_mongodb(coll).find_one({"content_id": uid})
-        if bool(found):
+        if found:
             break
     return found
 
@@ -111,7 +111,7 @@ def get_app(uid: str):
 
 #--------------------- workflows ------------------------
 @app.get(API_URL_PREFIX+"/workflows", tags=['workflows'])
-async def get_workflows():
+def get_workflows():
     mycollection = conn_mongodb('workflows')
     return list(mycollection.find({}).collation({'locale':'en'}).sort("name", pymongo.ASCENDING))
 
