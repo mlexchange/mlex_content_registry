@@ -158,7 +158,8 @@ def job_content_dict(content):
                    'service_type': content['service_type'],
                    'working_directory': '',
                    'job_kwargs': {'uri': content['uri'], 
-                                  'cmd': content['cmd'][0]}
+                                  'cmd': content['cmd'][0],
+                                  'container_kwargs': content['container_kwargs']}
     }
     if 'map' in content:
         job_content['job_kwargs']['map'] = content['map']
