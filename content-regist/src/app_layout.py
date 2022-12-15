@@ -35,6 +35,7 @@ MODEL_TEMPLATE = {
     "description": "xxx",
     "gui_parameters": [],
     "cmd": [],
+    "kwargs": {},
     "compute_resources": {'num_processors': 0,
                           'num_gpus': 0}
 }
@@ -51,6 +52,7 @@ APP_TEMPLATE = {
     "application": [],
     "description": "xxx",
     "cmd": [],
+    "kwargs": {},
     "compute_resources": {'num_processors': 0,
                           'num_gpus': 0}
 }
@@ -67,6 +69,8 @@ WORKFLOW_TEMPLATE = {
     "workflow_type": "serial",
     "workflow_list": [],
     "description": "xxx",
+    "cmd": [],
+    "kwargs": {},
 }
 
 
@@ -105,6 +109,11 @@ def dash_forms(type):
         dbc.FormGroup(
             [ dbc.Label("Enter the commands to deploy the {}. Use comma to separate.".format(type), className="mr-2"),
               dbc.Input(id="cmd-regist", type="text", placeholder="Enter commands to deploy the {}".format(type), debounce=True),
+            ],
+        ),
+        dbc.FormGroup(
+            [ dbc.Label("Enter any other kwargs to deploy the {} (optional). Use double quotes to construct the kwargs dictionary.".format(type), className="mr-2"),
+              dbc.Input(id="kwargs-regist", type="text", placeholder="Enter kwargs to deploy the {}".format(type), debounce=True),
             ],
         ),
         dbc.FormGroup(

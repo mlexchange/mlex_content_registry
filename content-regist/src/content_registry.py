@@ -243,6 +243,7 @@ def options_for_workflow_dropdown(value):
     Input("model-cpu-num", "value"),
     Input("model-gpu-num", "value"),
     Input("cmd-regist", "value"),
+    Input("kwargs-regist", "value"),
     Input("workflow-execution-type", "value"),
     Input("workflow-gui-container", "children"),
     Input("dynamic-gui-container", "children"),
@@ -257,7 +258,7 @@ def options_for_workflow_dropdown(value):
     )
 def json_generator(content_type, component_type, name, version, model_type, uri, reference, \
                    description, applications, access_type, service_type, app_cpu_num, \
-                   app_gpu_num, model_cpu_num, model_gpu_num, cmds, workflow_type, \
+                   app_gpu_num, model_cpu_num, model_gpu_num, cmds, kwargs, workflow_type, \
                    workflow_children, children, n1, n2, upload_content, ports, file_name, file_date):
     
     
@@ -303,6 +304,10 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                 if cmd not in json_document["cmd"]:
                     json_document["cmd"].append(cmd)
         
+        if "kwargs" in json_document and kwargs:
+            kwargs =  json.loads(str(kwargs))
+            json_document["container_kwargs"]=kwargs
+            
         if content_type == 'model':
             if children[0]['props']['children'][2]['props']['children'] is not None and component_type:
                 for k,child in enumerate(children):
@@ -530,6 +535,7 @@ def launch_jobs(n_clicks, rows, data, tab_value):
         job_names = ''
         for i,row in enumerate(rows):
             job_content = job_content_dict(data[row])
+            print(f'job_content\n{job_content}')
             job_list.append(job_content) 
             dependency[str(i)] = []  #all modes and apps are regarded as independent at this time
             job_names += job_content['mlex_app'] + ', '
@@ -591,9 +597,10 @@ def update_app_url(n_clicks, jobs, tab_value, rows):
                 mapping = jobs[row]['job_kwargs']['map']
                 for key in mapping:
                     port = mapping.get(key)
-                    port=port[0]["HostPort"]
-                    web_url = "http://localhost:{}".format(port)
-                    web_urls.append(web_url)
+                    if port:
+                        port=port[0]["HostPort"]
+                        web_url = "http://localhost:{}".format(port)
+                        web_urls.append(web_url)
     
     return web_urls
 
