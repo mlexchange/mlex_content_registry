@@ -187,11 +187,17 @@ def webhook_receiver(msg: dict):
                 else:
                     user_data[key] = value
                     
-        requests.post(f'http://search-api:{SEARCH_API_PORT}/api/v0/index/document', params = params, json = search_data)
-        #requests.post(f'http://user-api:{USER_API_PORT}/api/v0/content', json = user_data)
+        try:
+            requests.post(f'http://search-api:{SEARCH_API_PORT}/api/v0/index/document', params = params, json = search_data)
+            #requests.post(f'http://user-api:{USER_API_PORT}/api/v0/content', json = user_data)
+        except:
+            print('Post to search api is not successful.')
     
     elif msg['event'] == 'delete_content':
-        requests.delete(f'http://search-api:{SEARCH_API_PORT}/api/v0/index/{content_type}/document/{content_id}')
-        #requests.delete(f'http://user-api:{USER_API_PORT}/api/v0/content/{content_id}')
+        try:
+            requests.delete(f'http://search-api:{SEARCH_API_PORT}/api/v0/index/{content_type}/document/{content_id}')
+            #requests.delete(f'http://user-api:{USER_API_PORT}/api/v0/content/{content_id}')
+        except:
+            print('Delete to search api is not successful.')
 
 
