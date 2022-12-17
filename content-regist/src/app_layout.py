@@ -6,19 +6,18 @@ import dash_html_components as html
 import dash_core_components as dcc
 import dash_table
 
-from utility import get_content_list
+from registry_util import get_content_list
 
 job_list = []
-model_list = get_content_list()
 try:
-    print(f"model list:\n{model_list}")
+    model_list = get_content_list()
 except Exception:
     print("Unable to connect to the server.")
 
 MODEL_KEYS    = ['name', 'version', 'owner', 'type', 'uri', 'description']
 APP_KEYS      = ['name', 'version', 'owner', 'uri', 'description']
 WORKFLOW_KEYS = ['name', 'version', 'owner', 'workflow_type', 'description']
-JOB_KEYS      = ['description', 'submission_time', 'execution_time', 'job_status']
+JOB_KEYS      = ['description', 'service_type', 'submission_time', 'execution_time', 'job_status']
 
 OWNER = 'mlexchange team'
 
@@ -31,10 +30,12 @@ MODEL_TEMPLATE = {
     "owner": OWNER,
     "service_type": "backend",
     "uri": "xxx",
+    "reference": "xxx",
     "application": [],
     "description": "xxx",
     "gui_parameters": [],
     "cmd": [],
+    "kwargs": {},
     "compute_resources": {'num_processors': 0,
                           'num_gpus': 0}
 }
@@ -47,9 +48,11 @@ APP_TEMPLATE = {
     "owner": OWNER,
     "service_type": "frontend",
     "uri": "xxx",
+    "reference": "xxx",
     "application": [],
     "description": "xxx",
     "cmd": [],
+    "kwargs": {},
     "compute_resources": {'num_processors': 0,
                           'num_gpus': 0}
 }
@@ -61,10 +64,13 @@ WORKFLOW_TEMPLATE = {
     "version": "xxx",
     "owner": OWNER,
     "uri": "xxx",
+    "reference": "xxx",
     "application": [],
     "workflow_type": "serial",
     "workflow_list": [],
     "description": "xxx",
+    "cmd": [],
+    "kwargs": {},
 }
 
 
@@ -103,6 +109,11 @@ def dash_forms(type):
         dbc.FormGroup(
             [ dbc.Label("Enter the commands to deploy the {}. Use comma to separate.".format(type), className="mr-2"),
               dbc.Input(id="cmd-regist", type="text", placeholder="Enter commands to deploy the {}".format(type), debounce=True),
+            ],
+        ),
+        dbc.FormGroup(
+            [ dbc.Label("Enter any other kwargs to deploy the {} (optional). Use double quotes to construct the kwargs dictionary.".format(type), className="mr-2"),
+              dbc.Input(id="kwargs-regist", type="text", placeholder="Enter kwargs to deploy the {}".format(type), debounce=True),
             ],
         ),
         dbc.FormGroup(
@@ -459,15 +470,7 @@ table_models = dbc.Card(
             dbc.Button(
                 "Launch the Selected",
                 id="button-launch",
-                className="m-2",
-                color="success",
-                size="sm",
-                n_clicks=0,
-            ),
-            dbc.Button(
-                "Open App",
-                id="button-open-window",
-                className="m-2",
+                className="mtb-2",
                 color="success",
                 size="sm",
                 n_clicks=0,
@@ -494,6 +497,7 @@ table_models = dbc.Card(
                     columns=[{'id': p, 'name': p} for p in MODEL_KEYS],
                     data=model_list,
                     row_selectable='multi',
+                    page_size=4,
                     editable=False,
                     style_cell={'padding': '0.5rem', 'textAlign': 'left'},
                     css=[{"selector": ".show-hide", "rule": "display: none"}],
@@ -510,21 +514,38 @@ table_jobs = dbc.Card(
     id ='running-jobs',
     children = [
         dbc.CardBody([
-            dbc.Button(
-                "Refresh Job List",
-                id="button-refresh-jobs",
-                className="mtb-2",
-                color="primary",
-                size="sm",
-                n_clicks=0,
-            ),
-            dbc.Button(
-                "Terminate the Selected",
-                id="button-terminate",
-                className="m-2",
-                color="warning",
-                size="sm",
-                n_clicks=0,
+            html.Div(
+                children = [
+                    dbc.Button(
+                        "Refresh Job List",
+                        id="button-refresh-jobs",
+                        className="mtb-2",
+                        color="primary",
+                        size="sm",
+                        n_clicks=0,
+                    ),
+                    dbc.Button(
+                        "Terminate the Selected",
+                        id="button-terminate",
+                        className="m-2",
+                        color="warning",
+                        size="sm",
+                        n_clicks=0,
+                    ),
+                    dbc.Collapse(
+                        children=[dbc.Button(
+                                    "Open the Selected Frontend App(s)",
+                                    id="button-open-window",
+                                    className="mtb-2",
+                                    color="success",
+                                    size="sm",
+                                    n_clicks=0,
+                                  )],
+                        id="collapse-open-app",
+                        is_open=True,
+                    )],
+                className='row',
+                style={'align-items': 'center', 'margin-left': '1px'}
             ),
             html.Div(
                 children = [
@@ -533,6 +554,7 @@ table_jobs = dbc.Card(
                     columns=[{'id': p, 'name': p} for p in JOB_KEYS],
                     data=job_list,
                     row_selectable='multi',
+                    page_size=4,
                     editable=False,
                     style_cell={'padding': '0.5rem', 'textAlign': 'left'},
                     css=[{"selector": ".show-hide", "rule": "display: none"}],
@@ -551,10 +573,10 @@ meta = [
         children=[   
             dcc.Store(id="json-store", data=MODEL_TEMPLATE.copy()),
             dcc.Store(id="nothing", data=''),
-            dcc.Store(id="web-url", data=''),
-            dcc.Store(id="job-type", data=''),
+            dcc.Store(id="web-urls", data=[]),
             dcc.Store(id="dummy", data=''),
             dcc.Store(id="dummy1", data=''),
+            dcc.Store(id="dummy2", data=''),
             dcc.Store(id="table-contents-cache", data=[]),
             dcc.Store(id='validation', data=0),
         ],
@@ -565,7 +587,7 @@ meta = [
 # Setting up initial webpage layout
 app.layout = html.Div (
         [
-            #header,
+            header,
             dbc.Container(
                 [
                     dbc.Row([dbc.Col(register_model, width=6), dbc.Col(upload_model, width=6)]),

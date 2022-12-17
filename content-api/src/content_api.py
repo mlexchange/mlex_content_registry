@@ -10,9 +10,13 @@ from fastapi import FastAPI
 import requests
 from pydantic import BaseModel, ValidationError
 
+from api_util import send_webhook
+
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 MONGO_DB_URI = "mongodb+srv://admin:%s" % config['content database']['ATLAS_ADMIN']
+USER_API_PORT = config['user api port']['USER_API_PORT']
+SEARCH_API_PORT = config['search api port']['SEARCH_API_PORT']
 
 #connecting to mongoDB Atlas
 def conn_mongodb(collection='models'):
@@ -23,9 +27,8 @@ def conn_mongodb(collection='models'):
     return db[collection]
     
 mycollection = conn_mongodb()
-model_list = list(mycollection.find({}).sort("name",pymongo.ASCENDING))
 try:
-    print(f"model list:\n{model_list}")
+    model_list = list(mycollection.find({}).sort("name",pymongo.ASCENDING))
 except Exception:
     print("Unable to connect to the server.")
 
@@ -60,7 +63,7 @@ def get_content(uid: str):
     found = None
     for coll in ['models', 'apps', 'workflows', 'assets']:
         found = conn_mongodb(coll).find_one({"content_id": uid})
-        if bool(found):
+        if found:
             break
     return found
 
@@ -108,7 +111,7 @@ def get_app(uid: str):
 
 #--------------------- workflows ------------------------
 @app.get(API_URL_PREFIX+"/workflows", tags=['workflows'])
-async def get_workflows():
+def get_workflows():
     mycollection = conn_mongodb('workflows')
     return list(mycollection.find({}).collation({'locale':'en'}).sort("name", pymongo.ASCENDING))
 
@@ -130,6 +133,7 @@ def add_asset(content: dict):
     content["content_id"] = str(uuid.uuid4())
     mycollection = conn_mongodb('assets')
     mycollection.insert_one(content)
+    send_webhook({"event": "add_content", "content_id": content["content_id"], "content_type": "asset"})
     return content["content_id"]
 
 
@@ -153,5 +157,47 @@ def delete_assets(uids: list):
     """
     mycollection = conn_mongodb('assets')
     mycollection.delete_many({'content_id':{'$in':uids}})
+    for uid in uids:
+        send_webhook({"event": "delete_content", "content_id": uid, "content_type": "asset"})
     
     
+#----------------------- webhook --------------------------
+search_keys = ["name", "version", "type", "uri", "application", "reference", "description", "content_type", "content_id", "owner"]
+user_keys   = ["name", "owner", "content_type", "content_id", "public"]
+
+@app.post(API_URL_PREFIX + '/receiver', status_code=201, tags = ['Webhook'])
+def webhook_receiver(msg: dict):
+    content_id = msg['content_id']
+    content_type = msg['content_type']
+    params = {
+        'index': content_type,
+        'doc_id': content_id}
+    if msg['event'] == 'add_content':
+        content = requests.get(f'http://content-api:8000/api/v0/contents/{content_id}/content').json()
+        search_data = {}
+        user_data = {}
+        for key, value in content.items():
+            if key in search_keys:
+                search_data[key] = value
+            if key in user_keys:
+                if key == 'content_type':
+                    user_data["type"] = value
+                elif key == 'content_id':
+                    user_data["content_uid"] = value
+                else:
+                    user_data[key] = value
+                    
+        try:
+            requests.post(f'http://search-api:{SEARCH_API_PORT}/api/v0/index/document', params = params, json = search_data)
+            #requests.post(f'http://user-api:{USER_API_PORT}/api/v0/content', json = user_data)
+        except:
+            print('Post request to search api is failed. Check if search-api is up.')
+    
+    elif msg['event'] == 'delete_content':
+        try:
+            requests.delete(f'http://search-api:{SEARCH_API_PORT}/api/v0/index/{content_type}/document/{content_id}')
+            #requests.delete(f'http://user-api:{USER_API_PORT}/api/v0/content/{content_id}')
+        except:
+            print('Delete request to search api is failed. Check if search-api is up.')
+
+

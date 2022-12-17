@@ -15,10 +15,11 @@ import json
 import base64
 import requests
 
-from utility import conn_mongodb, get_content_list, get_dropdown_options, get_schema, validate_json, \
-                    is_duplicate, update_mongodb, remove_key_from_dict_list, get_content
-from generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
-                      make_form_bool, make_form_graph
+from registry_util import conn_mongodb, get_content_list, get_dropdown_options, get_schema, \
+                    validate_json, is_duplicate, update_mongodb, remove_key_from_dict_list, \
+                    get_content, job_content_dict, send_webhook
+from form_generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
+                      make_form_bool, make_form_img, make_form_graph
 
 from targeted_callbacks import targeted_callback
 from kwarg_editor import JSONParameterEditor
@@ -66,6 +67,17 @@ def toggle_app_port_inputform(app_type):
         return False
 
 
+@app.callback(
+    Output("collapse-open-app", "is_open"),
+    Input("tab-group","value"),
+)
+def toggle_open_app_button(tab_group):
+    if tab_group == 'workflow':
+        return False
+    else:
+        return True
+
+
 # might need collapse to handle id not found issues
 @app.callback( 
     Output("tab-display", "children"),
@@ -93,11 +105,11 @@ def update_layout(tab_value):
     Input('confirm-delete', 'n_clicks'),
     State("tab-group","value")
     )
-def update_regist(rows, n_click, tab_value):
+def delete_content(rows, n_click, tab_value):
     content_list = get_content_list(tab_value+'s')
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'confirm-delete' in changed_id:
-        if bool(rows):
+        if rows:
             content_ids = [] 
             for row in rows:
                 if 'content_id' in content_list[row]:
@@ -106,10 +118,13 @@ def update_regist(rows, n_click, tab_value):
             for content_id in content_ids:
                 mycollection = conn_mongodb(tab_value+'s') 
                 mycollection.delete_one({"content_id": content_id})
+                send_webhook({"event": "delete_content", "content_id": content_id, "content_type": tab_value})
 
     return get_content_list(tab_value+'s')
 
 
+comp_labels = ['input form (int)', 'input form (float)', 'input form (str)', 'slider','dropdown','radio items','boolean toggle switch','image', 'graph uploader']
+comp_values = ['int', 'float', 'str', 'slider', 'dropdown', 'radio', 'bool', 'img', 'graph']
 @app.callback(
     Output('dynamic-gui-container', 'children'),
     Input('gui-component-add', 'n_clicks'),
@@ -122,7 +137,7 @@ def display_component(n_clicks, children):
                 'type': 'dynamic-dropdown',
                 'index': n_clicks
             },
-            options=[{'label': i, 'value': i} for i in ['int', 'float', 'str', 'slider','dropdown','radio','bool','graph']]
+            options=[{'label': l, 'value': v} for l, v in zip(comp_labels,comp_values)]
         ),
         html.Div(
             id={
@@ -144,7 +159,7 @@ def display_component(n_clicks, children):
 )
 def display_output(value, n_cliks):
     i = int(re.findall('(?<="index":)\\d+(?=,)', dash.callback_context.triggered[0]['prop_id'])[0])
-    if value in ['float','int','str']:
+    if value in ['int','float','str']:
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_input(i)])
     elif value == 'dropdown':
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_dropdown(i)])
@@ -154,6 +169,8 @@ def display_output(value, n_cliks):
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_radio(i)])
     elif value == 'bool':
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_bool(i)])
+    elif value == 'img':
+        return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_img(i)])
     elif value == 'graph':
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_graph(i)])
     else:
@@ -226,6 +243,7 @@ def options_for_workflow_dropdown(value):
     Input("model-cpu-num", "value"),
     Input("model-gpu-num", "value"),
     Input("cmd-regist", "value"),
+    Input("kwargs-regist", "value"),
     Input("workflow-execution-type", "value"),
     Input("workflow-gui-container", "children"),
     Input("dynamic-gui-container", "children"),
@@ -240,7 +258,7 @@ def options_for_workflow_dropdown(value):
     )
 def json_generator(content_type, component_type, name, version, model_type, uri, reference, \
                    description, applications, access_type, service_type, app_cpu_num, \
-                   app_gpu_num, model_cpu_num, model_gpu_num, cmds, workflow_type, \
+                   app_gpu_num, model_cpu_num, model_gpu_num, cmds, kwargs, workflow_type, \
                    workflow_children, children, n1, n2, upload_content, ports, file_name, file_date):
     
     
@@ -263,10 +281,10 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
         keys = ["name","version","type","uri","reference", "description", "public", "service_type"]
         items = [name, version, model_type, uri, reference, description, access_type, service_type]
         for item,key in zip(items,keys):
-            if key in json_document and bool(item):
+            if key in json_document and item:
                 json_document[key] = item
 
-        if bool(applications):
+        if applications:
             applications = applications.split(",")
             for application in applications:
                 if application not in json_document["application"]:
@@ -280,14 +298,18 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                 json_document["compute_resources"] = {"num_processors": app_cpu_num,
                                                       "num_gpus": app_gpu_num}
         
-        if "cmd" in json_document and bool(cmds):
+        if "cmd" in json_document and cmds:
             cmds = cmds.split(",")
             for cmd in cmds:
                 if cmd not in json_document["cmd"]:
                     json_document["cmd"].append(cmd)
         
+        if "kwargs" in json_document and kwargs:
+            kwargs =  json.loads(str(kwargs))
+            json_document["container_kwargs"]=kwargs
+            
         if content_type == 'model':
-            if children[0]['props']['children'][2]['props']['children'] is not None and bool(component_type):
+            if children[0]['props']['children'][2]['props']['children'] is not None and component_type:
                 for k,child in enumerate(children):
                     input_items = child['props']['children'][2]['props']['children']['props']['children'][1]['props']['children']
                     length = len(input_items)
@@ -313,8 +335,8 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                                 component_combo[input_type] = options
                             else:
                                 component_combo[input_type] = input_value
-                        else:
-                            print('No value is found in the input form yet')
+#                         else:
+#                             print('No value is found in the input form yet')
 
                     if component_combo["type"] == "int" and "value" in component_combo:
                         component_combo["value"] = int(component_combo["value"])
@@ -325,13 +347,12 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                             component_combo["value"] = True
                         else:
                             component_combo["value"] = False
-
                     json_document["gui_parameters"].append(component_combo)
             else:
                 print('No gui component is added!')
 
         if content_type == 'workflow':
-            if bool(workflow_type):
+            if workflow_type:
                 json_document["workflow_type"] = workflow_type
             
             workflow_list = []
@@ -341,7 +362,7 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                 json_document["workflow_list"] = workflow_list
                 
         if content_type == 'app':
-            if json_document["service_type"] == 'frontend' and bool(ports):
+            if json_document["service_type"] == 'frontend' and ports:
                 json_document["map"] = {}
                 ports = ports.split(",")
                 for port in ports:
@@ -376,14 +397,18 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
 def add_new_content(n1, n2, is_valid, json_document):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-upload.n_clicks' in changed_id:
-        if bool(json_document) and is_valid:
+        if json_document and is_valid:
             mycollection = conn_mongodb(json_document['content_type']+'s')
             mycollection.insert_one(json_document)
+            send_webhook({"event": "add_content", "content_id": json_document["content_id"], "content_type": json_document["content_type"]})
 
     if 'button-register.n_clicks' in changed_id:
-        if bool(json_document):
+        if json_document:
             mycollection = conn_mongodb(json_document['content_type']+'s')
             mycollection.insert_one(json_document)
+            msg = {'event': 'add_content', 'content_id': json_document['content_id']}
+            print(f'Producer: sending webhook msg {msg}')
+            send_webhook({"event": "add_content", "content_id": json_document["content_id"], "content_type": json_document["content_type"]})
 
 
 @app.callback(
@@ -395,7 +420,7 @@ def add_new_content(n1, n2, is_valid, json_document):
 def validate_json_schema(n, data):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-validate' in changed_id:
-        if bool(data):
+        if data:
             is_valid, msg = validate_json(data, data['content_type'])
             return [str(msg),is_valid]
         else:
@@ -412,7 +437,7 @@ def show_dynamic_gui_layouts(n_clicks):
     data = dash.callback_context.states["json-store.data"]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'gui-check' in changed_id and 'gui_parameters' in data:
-        if bool(data["gui_parameters"]):                    
+        if data["gui_parameters"]:                    
             item_list = JSONParameterEditor( _id={'type': 'parameter_editor'},   # pattern match _id (base id), name
                                              json_blob=remove_key_from_dict_list(data["gui_parameters"], "comp_group"),
                                             )
@@ -435,7 +460,7 @@ def show_gui_layouts(n_clicks):
     data = dash.callback_context.states["json-store.data"]
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'button-validate' in changed_id and 'gui_parameters' in data:
-        if bool(data["gui_parameters"]):
+        if data["gui_parameters"]:
             is_valid, msg = validate_json(data, data['content_type'])
             if is_valid:
                 item_list = JSONParameterEditor(_id={'type': 'parameter_editor'},   # pattern match _id (base id), name
@@ -470,22 +495,8 @@ def download_model(n_clicks, data):
 
 
 #---------------------------------- launch jobs ------------------------------------------
-def job_content_dict(content):
-    job_content = {'mlex_app': content['name'],
-                   'service_type': content['service_type'],
-                   'working_directory': '',
-                   'job_kwargs': {'uri': content['uri'], 
-                                  'cmd': content['cmd'][0]}
-    }
-    if 'map' in content:
-        job_content['job_kwargs']['map'] = content['map']
-    
-    return job_content
-
-
 @app.callback(
-    Output("web-url", "data"),
-    Output("job-type", "data"),
+    Output("dummy", "data"),
     Input("button-launch", "n_clicks"),
     State('table-model-list', 'selected_rows'),
     State("table-contents-cache", "data"),
@@ -493,14 +504,12 @@ def job_content_dict(content):
     prevent_initial_call=True,
 )
 def launch_jobs(n_clicks, rows, data, tab_value):
-    web_url = ''
     compute_dict = {'user_uid': '001',
                     'host_list': ['mlsandbox.als.lbl.gov', 'local.als.lbl.gov', 'vaughan.als.lbl.gov'],
                     'requirements': {'num_processors': 2,
                                      'num_gpus': 0,
                                      'num_nodes': 2},
                     }
-    
     if tab_value == 'workflow':
         for row in rows:
             job_list = []
@@ -519,7 +528,6 @@ def launch_jobs(n_clicks, rows, data, tab_value):
             if len(job_list)==1:
                 compute_dict['requirements']['num_nodes'] = 1
             response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-            web_url = "http://{}.mlsandbox.als.lbl.gov".format(response.json())
     
     elif tab_value == 'model' or tab_value == 'app':
         job_list = []
@@ -527,6 +535,7 @@ def launch_jobs(n_clicks, rows, data, tab_value):
         job_names = ''
         for i,row in enumerate(rows):
             job_content = job_content_dict(data[row])
+            print(f'job_content\n{job_content}')
             job_list.append(job_content) 
             dependency[str(i)] = []  #all modes and apps are regarded as independent at this time
             job_names += job_content['mlex_app'] + ', '
@@ -534,30 +543,11 @@ def launch_jobs(n_clicks, rows, data, tab_value):
         compute_dict['job_list'] = job_list
         compute_dict['dependencies'] = dependency
         compute_dict['description'] = 'parallel workflow: ' + job_names
-        if len(job_list)==1:
+        if len(job_list) == 1:
             compute_dict['requirements']['num_nodes'] = 1
         response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-        web_url = "http://{}.mlsandbox.als.lbl.gov".format(response.json())
         
-    return web_url, tab_value
-
-
-app.clientside_callback(
-    """
-    function(n_clicks, web_url, job_type) {
-        if (job_type == 'app'){
-            window.open(web_url);
-        }
-        return '';
-    }
-    """,
-    Output('dummy', 'data'),
-    Input("button-open-window", "n_clicks"),
-    State('web-url', 'data'),
-    State('job-type', 'data')
-)
-
-
+    return ''
 
 
 @app.callback(
@@ -592,15 +582,53 @@ def jobs_table(n, tab_value):
 
 
 @app.callback(
-    Output("dummy1", "data"),
+    Output("web-urls", "data"),
+    Input("button-open-window", "n_clicks"),
+    State("table-job-list", "data"),
+    State("tab-group","value"),
+    State('table-job-list', 'selected_rows'),
+    prevent_initial_call=True,
+)
+def update_app_url(n_clicks, jobs, tab_value, rows):
+    web_urls = []
+    if rows:
+        for row in rows:
+            if jobs[row]['service_type'] == 'frontend' and 'map' in jobs[row]['job_kwargs']:
+                mapping = jobs[row]['job_kwargs']['map']
+                for key in mapping:
+                    port = mapping.get(key)
+                    if port:
+                        port=port[0]["HostPort"]
+                        web_url = "http://mlsandbox.als.lbl.gov:{}".format(port)
+                        web_urls.append(web_url)
+    
+    return web_urls
+
+
+app.clientside_callback(
+    """
+    function(web_urls) {
+        for (let i = 0; i < web_urls.length; i++) { 
+            window.open(web_urls[i]);
+        }
+        return '';
+    }
+    """,
+    Output('dummy1', 'data'),
+    Input('web-urls', 'data'),
+)
+
+
+@app.callback(
+    Output("dummy2", "data"),
     Input("button-terminate", "n_clicks"),
-    Input("table-job-list", "data"),
-    Input("tab-group","value"),
+    State("table-job-list", "data"),
+    State("tab-group","value"),
     State('table-job-list', 'selected_rows'),
     prevent_initial_call=True,
 )
 def terminate_jobs(n_clicks, jobs, tab_value, rows):
-    if bool(rows):
+    if rows:
         for row in rows:
             job_id = jobs[row]['uid']
             print(f'terminate uid {job_id}')
