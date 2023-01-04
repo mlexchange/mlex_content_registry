@@ -7,6 +7,8 @@ services:
     build:
       context: "content-api/"
       dockerfile: "docker/Dockerfile"
+    environment:
+      ATLAS_ACCESS: '${ATLAS_ADMIN}'
     volumes:
       - ./content-api/src:/app/api/src
     ports:
@@ -20,6 +22,8 @@ services:
     build:
       context: "content-regist/"
       dockerfile: "docker/Dockerfile"
+    environment:
+      ATLAS_ACCESS: '${ATLAS_ADMIN}'
     volumes:
       - ./content-regist/data:/app/content-regist/data    
       - ./content-regist/src:/app/content-regist/src
