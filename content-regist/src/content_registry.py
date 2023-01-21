@@ -32,14 +32,12 @@ from app_layout import app, data_uploader, dash_forms, MODEL_TEMPLATE, APP_TEMPL
 @app.callback(
     Output("table-model-list", "data"),
     Input("table-contents-cache", "data"),  # automatically refresh table after delete, not after upload though
-    Input("button-refresh", "n_clicks"),
-    Input("tab-group","value"),
+    Input("tab-group", "value"),
+    Input("monitoring", "n_intervals")
     )
-def refresh_table(data, n_cliks, tab_value):
+def refresh_table(data, tab_value, n_intervals):
     model_list = get_content_list(tab_value+'s')
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if 'button-refresh' in changed_id:
-        model_list = get_content_list(tab_value+'s')
     
     return model_list
 
@@ -81,7 +79,6 @@ def toggle_open_app_button(tab_group):
 # might need collapse to handle id not found issues
 @app.callback( 
     Output("tab-display", "children"),
-    Output("button-refresh", "children"),
     Output("collapse-model-tab", "is_open"),
     Output("collapse-app-tab", "is_open"),
     Output("collapse-workflow-tab", "is_open"),
@@ -90,13 +87,13 @@ def toggle_open_app_button(tab_group):
     )
 def update_layout(tab_value):
     if tab_value == 'model':
-        return dash_forms('model'), 'Refresh Model List', True, False, False, [{'id': p, 'name': p} for p in MODEL_KEYS]
+        return dash_forms('model'), True, False, False, [{'id': p, 'name': p} for p in MODEL_KEYS]
     elif tab_value == 'app':
-        return dash_forms('app'), 'Refresh App List', False, True, False, [{'id': p, 'name': p} for p in APP_KEYS]
+        return dash_forms('app'), False, True, False, [{'id': p, 'name': p} for p in APP_KEYS]
     elif tab_value == 'workflow':
-        return dash_forms('workflow'), 'Refresh Workflow List', False, False, True, [{'id': p, 'name': p} for p in WORKFLOW_KEYS]
+        return dash_forms('workflow'), False, False, True, [{'id': p, 'name': p} for p in WORKFLOW_KEYS]
 #     elif tab_value == 'resource':
-#         return dash_forms('model'), 'Refresh Resources List', False, False, False, []
+#         return dash_forms('model'), False, False, False, []
 
 
 @app.callback( 
@@ -552,11 +549,11 @@ def launch_jobs(n_clicks, rows, data, tab_value):
 
 @app.callback(
     Output("table-job-list", "data"),
-    Input("button-refresh-jobs", "n_clicks"),
     Input("tab-group","value"),
+    Input("monitoring", "n_intervals"),
     prevent_initial_call=True,
 )
-def jobs_table(n, tab_value):
+def jobs_table(tab_value, n_interval):
     job_list = []
     if tab_value == 'workflow':
         #response = requests.get('http://job-service:8080/api/v0/workflows', params={'state':'running'}).json()
@@ -578,7 +575,7 @@ def jobs_table(n, tab_value):
             job['description'] = job['job_kwargs']['uri']
             job_list.append(job)
 
-    return job_list
+    return job_list[::-1]
 
 
 @app.callback(

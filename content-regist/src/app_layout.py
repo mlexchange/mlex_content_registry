@@ -452,10 +452,10 @@ table_models = dbc.Card(
     children = [
         dbc.CardBody([
             dbc.Button(
-                "Refresh Content List",
-                id="button-refresh",
+                "Launch the Selected",
+                id="button-launch",
                 className="mtb-2",
-                color="primary",
+                color="success",
                 size="sm",
                 n_clicks=0,
             ),
@@ -464,14 +464,6 @@ table_models = dbc.Card(
                 id="button-delete",
                 className="m-2",
                 color="danger",
-                size="sm",
-                n_clicks=0,
-            ),
-            dbc.Button(
-                "Launch the Selected",
-                id="button-launch",
-                className="mtb-2",
-                color="success",
                 size="sm",
                 n_clicks=0,
             ),
@@ -496,12 +488,12 @@ table_models = dbc.Card(
                     id='table-model-list',
                     columns=[{'id': p, 'name': p} for p in MODEL_KEYS],
                     data=model_list,
-                    row_selectable='multi',
-                    page_size=4,
+                    row_selectable='single',
+                    page_size=6,
                     editable=False,
                     style_cell={'padding': '0.5rem', 'textAlign': 'left'},
                     css=[{"selector": ".show-hide", "rule": "display: none"}],
-                    style_table={'height':'10rem', 'overflowY': 'auto'}
+                    style_table={'height':'15rem', 'overflowY': 'auto'}
                 ),
             ]),
             #dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True),
@@ -516,22 +508,6 @@ table_jobs = dbc.Card(
         dbc.CardBody([
             html.Div(
                 children = [
-                    dbc.Button(
-                        "Refresh Job List",
-                        id="button-refresh-jobs",
-                        className="mtb-2",
-                        color="primary",
-                        size="sm",
-                        n_clicks=0,
-                    ),
-                    dbc.Button(
-                        "Terminate the Selected",
-                        id="button-terminate",
-                        className="m-2",
-                        color="warning",
-                        size="sm",
-                        n_clicks=0,
-                    ),
                     dbc.Collapse(
                         children=[dbc.Button(
                                     "Open the Selected Frontend App(s)",
@@ -543,6 +519,14 @@ table_jobs = dbc.Card(
                                   )],
                         id="collapse-open-app",
                         is_open=True,
+                    ),
+                    dbc.Button(
+                        "Terminate the Selected",
+                        id="button-terminate",
+                        className="m-2",
+                        color="warning",
+                        size="sm",
+                        n_clicks=0,
                     )],
                 className='row',
                 style={'align-items': 'center', 'margin-left': '1px'}
@@ -553,12 +537,12 @@ table_jobs = dbc.Card(
                     id='table-job-list',
                     columns=[{'id': p, 'name': p} for p in JOB_KEYS],
                     data=job_list,
-                    row_selectable='multi',
-                    page_size=4,
+                    row_selectable='single',
+                    page_size=6,
                     editable=False,
                     style_cell={'padding': '0.5rem', 'textAlign': 'left'},
                     css=[{"selector": ".show-hide", "rule": "display: none"}],
-                    style_table={'height':'10rem', 'overflowY': 'auto'}
+                    style_table={'height':'15rem', 'overflowY': 'auto'}
                 ),
             ])
         ])
@@ -579,6 +563,11 @@ meta = [
             dcc.Store(id="dummy2", data=''),
             dcc.Store(id="table-contents-cache", data=[]),
             dcc.Store(id='validation', data=0),
+            dcc.Interval(
+                id='monitoring',
+                interval=1*1000, # in milliseconds
+                n_intervals=0
+            )
         ],
     ),
 ]
