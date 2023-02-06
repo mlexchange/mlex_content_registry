@@ -14,7 +14,8 @@ from copy import deepcopy
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 WEBHOOK_RECEIVER_URL = 'http://%s' % config['webhook']['RECEIVER']
-MONGO_DB_URI = "mongodb+srv://admin:%s" % str(os.environ['ATLAS_ACCESS'])
+#MONGO_DB_URI = "mongodb+srv://%s" % str(os.environ['ATLAS_ACCESS'])
+MONGO_DB_URI = str(os.environ['ATLAS_ACCESS'])
 
 #connecting to mongoDB Atlas
 def conn_mongodb(collection='models'):

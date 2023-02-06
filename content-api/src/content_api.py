@@ -16,7 +16,7 @@ config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 USER_API_PORT = config['user api port']['USER_API_PORT']
 SEARCH_API_PORT = config['search api port']['SEARCH_API_PORT']
-MONGO_DB_URI = "mongodb+srv://admin:%s" % str(os.environ['ATLAS_ACCESS'])
+MONGO_DB_URI = str(os.environ['ATLAS_ACCESS'])
 
 #connecting to mongoDB Atlas
 def conn_mongodb(collection='models'):
