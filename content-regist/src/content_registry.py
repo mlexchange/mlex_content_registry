@@ -511,13 +511,14 @@ def launch_jobs(n_clicks, rows, data, tab_value):
         for row in rows:
             job_list = []
             dependency = {}
-            workflow_list = data[row]['workflow_list']
-            for i,job_id in enumerate(workflow_list):
-                job_list.append(job_content_dict(get_content(job_id)))
-                dependency[str(i)] = []
-                if data[row]['workflow_type'] == 'serial':
-                    for j in range(i):
-                        dependency[str(i)].append(j) 
+            if data[row].get('workflow_list'):
+                workflow_list = data[row]['workflow_list']
+                for i,job_id in enumerate(workflow_list):
+                    job_list.append(job_content_dict(get_content(job_id)))
+                    dependency[str(i)] = []
+                    if data[row]['workflow_type'] == 'serial':
+                        for j in range(i):
+                            dependency[str(i)].append(j) 
 
             compute_dict['job_list'] = job_list
             compute_dict['dependencies'] = dependency
