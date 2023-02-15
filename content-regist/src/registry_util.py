@@ -166,7 +166,7 @@ def job_content_dict(content, user_id):
         job_content['job_kwargs']['map'] = content['map']
     
     if 'container_kwargs' in content:
-        job_content['job_kwargs']['container_kwargs'] = content['container_kwargs']
+        job_content['job_kwargs']['container_kwargs'] = {'environment': [f'DATA_DIR={WORKING_DIR}']}
     
     return job_content
 
