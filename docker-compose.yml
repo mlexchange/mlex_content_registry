@@ -24,7 +24,7 @@ services:
       dockerfile: "docker/Dockerfile"
     environment:
       ATLAS_ACCESS: "${ATLAS_USER}"
-      CONTAINER_WORKING_DIR: "${PWD}/data"
+      CONTAINER_WORKING_DIR: "${PWD}/data"  # working_directory (workflow dict) when launching jobs from content registry 
     volumes:
       - ./content-regist/data:/app/content-regist/data    
       - ./content-regist/src:/app/content-regist/src
