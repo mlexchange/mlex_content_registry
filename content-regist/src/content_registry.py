@@ -31,7 +31,7 @@ from app_layout import app, data_uploader, dash_forms, MODEL_TEMPLATE, APP_TEMPL
 #----------------------------------- callback reactives ------------------------------------
 @app.callback(
     Output("table-model-list", "data"),
-    Input("table-contents-cache", "data"),  # automatically refresh table after delete, not after upload though
+    Input("table-contents-cache", "data"),  # automatically refresh table after delete, not after upload though; mlex_userhome need it.
     Input("tab-group", "value"),
     Input("monitoring", "n_intervals")
     )
@@ -495,57 +495,182 @@ def download_model(n_clicks, data):
 @app.callback(
     Output("dummy", "data"),
     Input("button-launch", "n_clicks"),
+    Input("terminate-user-jobs", "n_clicks"),
+    State("table-model-list", "data"),
     State('table-model-list', 'selected_rows'),
-    State("table-contents-cache", "data"),
+    State("table-job-list", "data"),
+    State('table-job-list', 'selected_rows'),
     State("tab-group","value"),
     prevent_initial_call=True,
 )
-def launch_jobs(n_clicks, rows, data, tab_value):
-    compute_dict = {'user_uid': '001',
-                    'host_list': ['mlsandbox.als.lbl.gov', 'local.als.lbl.gov', 'vaughan.als.lbl.gov'],
-                    'requirements': {'num_processors': 2,
-                                     'num_gpus': 0,
-                                     'num_nodes': 2},
-                    }
-    if tab_value == 'workflow':
-        for row in rows:
-            job_list = []
-            dependency = {}
-            if data[row].get('workflow_list'):
-                workflow_list = data[row]['workflow_list']
-                for i,job_id in enumerate(workflow_list):
-                    job_list.append(job_content_dict(get_content(job_id)))
-                    dependency[str(i)] = []
-                    if data[row]['workflow_type'] == 'serial':
-                        for j in range(i):
-                            dependency[str(i)].append(j) 
-
-            compute_dict['job_list'] = job_list
-            compute_dict['dependencies'] = dependency
-            compute_dict['description'] = data[row]['name']+' v'+data[row]['version']
-            if len(job_list)==1:
-                compute_dict['requirements']['num_nodes'] = 1
-            response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-    
-    elif tab_value == 'model' or tab_value == 'app':
+def apps_jobs(n_clicks, n_terminate, data, rows, job_data, job_rows, tab_value):
+    user_id = '001'
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if "button-launch.n_clicks" in changed_id:
+        job_request = {'user_uid': user_id,
+                       'host_list': ['mlsandbox.als.lbl.gov', 'local.als.lbl.gov', 'vaughan.als.lbl.gov'],
+                       'requirements': {'num_processors': 2,
+                                        'num_gpus': 0,
+                                        'num_nodes': 2},
+                      }
+                    
         job_list = []
         dependency = {}
         job_names = ''
-        for i,row in enumerate(rows):
-            job_content = job_content_dict(data[row])
-            print(f'job_content\n{job_content}')
-            job_list.append(job_content) 
-            dependency[str(i)] = []  #all modes and apps are regarded as independent at this time
-            job_names += job_content['mlex_app'] + ', '
+        if tab_value == 'workflow':
+            if rows:
+                for row in rows:
+                    job_list = []
+                    dependency = {}
+                    print(f'data[row] {data[row]}')
+                    if 'workflow_list' in data[row]:
+                        workflow_list = data[row]['workflow_list']
+                        for i,job_id in enumerate(workflow_list):
+                            job_list.append(job_content_dict(get_content(job_id), user_id))
+                            print(f'job_list {job_list}')
+                            dependency[str(i)] = []
+                            if data[row]['workflow_type'] == 'serial':
+                                for j in range(i):
+                                    dependency[str(i)].append(j) 
+
+                    job_request['job_list'] = job_list
+                    job_request['dependencies'] = dependency
+                    job_request['description'] = data[row]['name']+' v'+data[row]['version']
+                    if len(job_list)==1:
+                        job_request['requirements']['num_nodes'] = 1
+                    response = requests.post('http://job-service:8080/api/v0/workflows', json=job_request)
+                    print(f'workflow response {response}')
         
-        compute_dict['job_list'] = job_list
-        compute_dict['dependencies'] = dependency
-        compute_dict['description'] = 'parallel workflow: ' + job_names
-        if len(job_list) == 1:
-            compute_dict['requirements']['num_nodes'] = 1
-        response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-        
+        elif tab_value == 'model' or tab_value == 'app':
+            if rows:
+                for i,row in enumerate(rows):
+                    job_content = job_content_dict(data[row], user_id)
+                    job_list.append(job_content) 
+                    dependency[str(i)] = []  #all modes and apps are regarded as independent at this time
+                    job_names += job_content['mlex_app'] + ', '
+    
+            job_request['job_list'] = job_list
+            job_request['dependencies'] = dependency
+            job_request['description'] = 'parallel workflow: ' + job_names
+            if len(job_list) == 1:
+                job_request['requirements']['num_nodes'] = 1
+            response = requests.post('http://job-service:8080/api/v0/workflows', json=job_request)
+            print(f'model/app response {response}')
+    
+    if "terminate-user-jobs.n_clicks" in changed_id:
+        print('Terminating jobs')
+        if job_rows:
+            for job_row in job_rows:
+                job_id = job_data[job_row]['uid']
+                print(f'terminate uid {job_id}')
+                if tab_value == 'workflow':
+                    response = requests.patch(f'http://job-service:8080/api/v0/workflows/{job_id}/terminate')
+                elif tab_value == 'model' or tab_value == 'app':
+                    response = requests.patch(f'http://job-service:8080/api/v0/jobs/{job_id}/terminate')
+
     return ''
+
+
+# @app.callback(
+#     Output("dummy", "data"),
+#     Input("button-launch", "n_clicks"),
+#     State('table-model-list', 'selected_rows'),
+#     State("table-contents-cache", "data"),
+#     State("tab-group","value"),
+#     prevent_initial_call=True,
+# )
+# def launch_jobs(n_clicks, rows, data, tab_value):
+#     compute_dict = {'user_uid': '001',
+#                     'host_list': ['mlsandbox.als.lbl.gov', 'local.als.lbl.gov', 'vaughan.als.lbl.gov'],
+#                     'requirements': {'num_processors': 2,
+#                                      'num_gpus': 0,
+#                                      'num_nodes': 2},
+#                     }
+#     if tab_value == 'workflow':
+#         for row in rows:
+#             job_list = []
+#             dependency = {}
+#             if data[row].get('workflow_list'):
+#                 workflow_list = data[row]['workflow_list']
+#                 for i,job_id in enumerate(workflow_list):
+#                     job_list.append(job_content_dict(get_content(job_id)))
+#                     dependency[str(i)] = []
+#                     if data[row]['workflow_type'] == 'serial':
+#                         for j in range(i):
+#                             dependency[str(i)].append(j) 
+# 
+#             compute_dict['job_list'] = job_list
+#             compute_dict['dependencies'] = dependency
+#             compute_dict['description'] = data[row]['name']+' v'+data[row]['version']
+#             if len(job_list)==1:
+#                 compute_dict['requirements']['num_nodes'] = 1
+#             response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
+#     
+#     elif tab_value == 'model' or tab_value == 'app':
+#         job_list = []
+#         dependency = {}
+#         job_names = ''
+#         for i,row in enumerate(rows):
+#             job_content = job_content_dict(data[row])
+#             print(f'job_content\n{job_content}')
+#             job_list.append(job_content) 
+#             dependency[str(i)] = []  #all modes and apps are regarded as independent at this time
+#             job_names += job_content['mlex_app'] + ', '
+#         
+#         compute_dict['job_list'] = job_list
+#         compute_dict['dependencies'] = dependency
+#         compute_dict['description'] = 'parallel workflow: ' + job_names
+#         if len(job_list) == 1:
+#             compute_dict['requirements']['num_nodes'] = 1
+#         response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
+#         
+#     return ''
+
+
+
+
+# @app.callback(
+#     Output("table-job-list", "data"),
+#     Input("button-refresh-jobs", "n_clicks"),
+#     prevent_initial_call=True,
+# )
+# def refresh_jobs_table(n):
+#     token_info = get_user_info()
+#     user_id = token_info.get("user_id")
+#     job_list = []
+#     response_get = requests.get(f'http://job-service:8080/api/v0/jobs?user={user_id}').json()
+#     for i,job in enumerate(response_get):
+#         job_uid = job['uid']
+#         job['submission_time'] = job['timestamps']['submission_time']
+#         job['execution_time'] = job['timestamps']['execution_time']
+#         job['job_status'] = job['status']['state']
+#         job['description'] = job['job_kwargs']['uri']
+#         job_list.append(job)
+# 
+#     return job_list
+
+
+# @app.callback(
+#     Output("web-urls", "data"),
+#     Input("button-open-window", "n_clicks"),
+#     State("table-job-list", "data"),
+#     State('table-job-list', 'selected_rows'),
+#     prevent_initial_call=True,
+# )
+# def update_app_url(n_clicks, jobs, rows):
+#     web_urls = []
+#     if bool(rows):
+#         for row in rows:
+#             if jobs[row]['service_type'] == 'frontend' and 'map' in jobs[row]['job_kwargs']:
+#                 mapping = jobs[row]['job_kwargs']['map']
+#                 for key in mapping:
+#                     port = mapping.get(key)
+#                     if port:
+#                         port=port[0]["HostPort"]
+#                         web_url = f"http://mlsandbox.als.lbl.gov:{port}"    #f"https://{port}.mlexchangebeta.als.lbl.gov"
+#                         web_urls.append(web_url)
+#     
+#     return web_urls
 
 
 @app.callback(
@@ -555,26 +680,23 @@ def launch_jobs(n_clicks, rows, data, tab_value):
     prevent_initial_call=True,
 )
 def jobs_table(tab_value, n_interval):
+    user_id = '001'
     job_list = []
     if tab_value == 'workflow':
         #response = requests.get('http://job-service:8080/api/v0/workflows', params={'state':'running'}).json()
+        #response = requests.get('http://job-service:8080/api/v0/workflows?user={user_id}').json()
         response = requests.get('http://job-service:8080/api/v0/workflows').json()
-        for i,job in enumerate(response):
-            job_uid = job['uid']
-            job['submission_time'] = job['timestamps']['submission_time']
-            job['execution_time'] = job['timestamps']['execution_time']
-            job['job_status'] = job['status']['state']
-            job_list.append(job)
-    
     elif tab_value == 'model' or tab_value == 'app':
-        response_get = requests.get('http://job-service:8080/api/v0/jobs').json()
-        for i,job in enumerate(response_get):
-            job_uid = job['uid']
-            job['submission_time'] = job['timestamps']['submission_time']
-            job['execution_time'] = job['timestamps']['execution_time']
-            job['job_status'] = job['status']['state']
+        response = requests.get('http://job-service:8080/api/v0/jobs').json()
+
+    for i,job in enumerate(response):
+        job_uid = job['uid']
+        job['submission_time'] = job['timestamps']['submission_time']
+        job['execution_time'] = job['timestamps']['execution_time']
+        job['job_status'] = job['status']['state']
+        if tab_value == 'model' or tab_value == 'app':
             job['description'] = job['job_kwargs']['uri']
-            job_list.append(job)
+        job_list.append(job)
 
     return job_list[::-1]
 
@@ -583,11 +705,10 @@ def jobs_table(tab_value, n_interval):
     Output("web-urls", "data"),
     Input("button-open-window", "n_clicks"),
     State("table-job-list", "data"),
-    State("tab-group","value"),
     State('table-job-list', 'selected_rows'),
     prevent_initial_call=True,
 )
-def update_app_url(n_clicks, jobs, tab_value, rows):
+def update_app_url(n_clicks, jobs, rows):
     web_urls = []
     if rows:
         for row in rows:
@@ -617,25 +738,25 @@ app.clientside_callback(
 )
 
 
-@app.callback(
-    Output("dummy2", "data"),
-    Input("button-terminate", "n_clicks"),
-    State("table-job-list", "data"),
-    State("tab-group","value"),
-    State('table-job-list', 'selected_rows'),
-    prevent_initial_call=True,
-)
-def terminate_jobs(n_clicks, jobs, tab_value, rows):
-    if rows:
-        for row in rows:
-            job_id = jobs[row]['uid']
-            print(f'terminate uid {job_id}')
-            if tab_value == 'workflow':
-                response = requests.patch(f'http://job-service:8080/api/v0/workflows/{job_id}/terminate')
-            elif tab_value == 'model' or tab_value == 'app':
-                response = requests.patch(f'http://job-service:8080/api/v0/jobs/{job_id}/terminate')
-    
-    return ''
+# @app.callback(
+#     Output("dummy2", "data"),
+#     Input("button-terminate", "n_clicks"),
+#     State("table-job-list", "data"),
+#     State("tab-group","value"),
+#     State('table-job-list', 'selected_rows'),
+#     prevent_initial_call=True,
+# )
+# def terminate_jobs(n_clicks, jobs, tab_value, rows):
+#     if rows:
+#         for row in rows:
+#             job_id = jobs[row]['uid']
+#             print(f'terminate uid {job_id}')
+#             if tab_value == 'workflow':
+#                 response = requests.patch(f'http://job-service:8080/api/v0/workflows/{job_id}/terminate')
+#             elif tab_value == 'model' or tab_value == 'app':
+#                 response = requests.patch(f'http://job-service:8080/api/v0/jobs/{job_id}/terminate')
+#     
+#     return ''
 
 
 if __name__ == '__main__':

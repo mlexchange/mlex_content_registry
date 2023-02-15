@@ -522,7 +522,7 @@ table_jobs = dbc.Card(
                     ),
                     dbc.Button(
                         "Terminate the Selected",
-                        id="button-terminate",
+                        id="terminate-user-jobs",
                         className="m-2",
                         color="warning",
                         size="sm",

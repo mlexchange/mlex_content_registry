@@ -16,6 +16,7 @@ config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 WEBHOOK_RECEIVER_URL = 'http://%s' % config['webhook']['RECEIVER']
 #MONGO_DB_URI = "mongodb+srv://%s" % str(os.environ['ATLAS_ACCESS'])
 MONGO_DB_URI = str(os.environ['ATLAS_ACCESS'])
+WORKING_DIR = str(os.environ['CONTAINER_WORKING_DIR'])
 
 #connecting to mongoDB Atlas
 def conn_mongodb(collection='models'):
@@ -154,14 +155,13 @@ def workflow_dependency(workflow):
 #             dependencies[workflow_id].extend(workflow_dependency_list)
 
 
-def job_content_dict(content):
+def job_content_dict(content, user_id):
     job_content = {'mlex_app': content['name'],
                    'service_type': content['service_type'],
-                   'working_directory': '',
+                   'working_directory': f'{WORKING_DIR}',
                    'job_kwargs': {'uri': content['uri'], 
                                   'cmd': content['cmd'][0]}
-                   }
-    
+    }
     if 'map' in content:
         job_content['job_kwargs']['map'] = content['map']
     
