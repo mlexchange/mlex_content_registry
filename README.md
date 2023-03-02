@@ -14,8 +14,14 @@ Contents include:
 ## How to use
 Requirements: MLExchange compute_api
 
-**Running content registry**   
-`docker-compose up --build`
+**Running content registry**.   
+1. create the same environmental file (.env) as the one used in the compute api:
+```
+MONGO_DB_USERNAME=your_username
+MONGO_DB_PASSWORD=your_password                 
+```   
+2. If it was the first time running MLExchange content registry, you need to initilize its database using the command `./init_db.sh your_username your_password`. If the errors says 'duplicate key error collection', it means the content database is already existent. No need to worry anything.   
+3. `docker-compose up --build`
 
 **Viewing existing contents**  
 Scroll down to the bottom of the page, click on **Refresh** button.
