@@ -8,7 +8,8 @@ services:
       context: "content-api/"
       dockerfile: "docker/Dockerfile"
     environment:
-      ATLAS_ACCESS: "${ATLAS_USER}"
+      MONGO_INITDB_ROOT_USERNAME: '${MONGO_DB_USERNAME}'
+      MONGO_INITDB_ROOT_PASSWORD: '${MONGO_DB_PASSWORD}'
     volumes:
       - ./content-api/src:/app/api/src
     ports:
@@ -23,7 +24,8 @@ services:
       context: "content-regist/"
       dockerfile: "docker/Dockerfile"
     environment:
-      ATLAS_ACCESS: "${ATLAS_USER}"
+      MONGO_INITDB_ROOT_USERNAME: '${MONGO_DB_USERNAME}'
+      MONGO_INITDB_ROOT_PASSWORD: '${MONGO_DB_PASSWORD}'
       CONTAINER_WORKING_DIR: "${PWD}/data"  # working_directory (workflow dict) when launching jobs from content registry 
     volumes:
       - ./content-regist/data:/app/content-regist/data    
@@ -31,7 +33,7 @@ services:
     ports:
       - "8051:8051"
     networks:
-      - computing_api_default
+      - computing_api_default  
 
 networks:
   computing_api_default:
