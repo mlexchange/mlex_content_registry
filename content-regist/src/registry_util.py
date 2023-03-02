@@ -15,14 +15,17 @@ config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 WEBHOOK_RECEIVER_URL = 'http://%s' % config['webhook']['RECEIVER']
 #MONGO_DB_URI = "mongodb+srv://%s" % str(os.environ['ATLAS_ACCESS'])
-MONGO_DB_URI = str(os.environ['ATLAS_ACCESS'])
+MONGO_DB_USERNAME = str(os.environ['MONGO_INITDB_ROOT_USERNAME'])
+MONGO_DB_PASSWORD = str(os.environ['MONGO_INITDB_ROOT_PASSWORD'])
+MONGO_DB_URI = "mongodb://%s:%s@mongodb:27017/?authSource=admin" % (MONGO_DB_USERNAME, MONGO_DB_PASSWORD)
+#MONGO_DB_URI = str(os.environ['ATLAS_ACCESS'])
 WORKING_DIR = str(os.environ['CONTAINER_WORKING_DIR'])
 
 #connecting to mongoDB Atlas
 def conn_mongodb(collection='models'):
     # set a 10-second connection timeout
     client = pymongo.MongoClient(MONGO_DB_URI, serverSelectionTimeoutMS=100000)
-    db = client['lbl-mlexchange']
+    db = client['content_registry']
     return db[collection]
 
 
