@@ -20,7 +20,7 @@ Requirements: MLExchange compute_api
 MONGO_DB_USERNAME=your_username
 MONGO_DB_PASSWORD=your_password                 
 ```   
-2. If it was the first time running MLExchange content registry, you need to initialize its database using the command `./init_db.sh your_username your_password`. If the errors says 'duplicate key error collection', it means the content database is already existent. No need to worry anything.   
+2. If it was the first time running MLExchange content registry, you need to initialize its database using the command `./init_db.sh`. If the error msg says 'duplicate key error collection', it means the content database is already existent.    
 3. Run `docker-compose up --build`.
 
 **Viewing existing contents**  
