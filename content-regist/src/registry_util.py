@@ -21,6 +21,77 @@ MONGO_DB_URI = "mongodb://%s:%s@mongodb:27017/?authSource=admin" % (MONGO_DB_USE
 #MONGO_DB_URI = str(os.environ['ATLAS_ACCESS'])
 WORKING_DIR = str(os.environ['CONTAINER_WORKING_DIR'])
 
+
+model_keys    = ['name', 'version', 'owner', 'type', 'uri', 'description']
+app_keys      = ['name', 'version', 'owner', 'uri', 'description']
+workflow_keys = ['name', 'version', 'owner', 'workflow_type', 'description']
+job_keys      = ['description', 'service_type', 'submission_time', 'execution_time', 'job_status']
+
+owner = 'mlexchange team'
+
+model_template = {
+    "content_type": "model",
+    "name": "example",
+    "public": False,
+    "version": "xxx",
+    "type": "xxx",
+    "owner": owner,
+    "service_type": "backend",
+    "uri": "xxx",
+    "reference": "xxx",
+    "application": [],
+    "description": "xxx",
+    "gui_parameters": [],
+    "cmd": [],
+    "kwargs": {},
+    "compute_resources": {'num_processors': 0,
+                          'num_gpus': 0}
+}
+
+app_template = {
+    "content_type": "app",
+    "name": "example",
+    "public": False,
+    "version": "xxx",
+    "owner": owner,
+    "service_type": "frontend",
+    "uri": "xxx",
+    "reference": "xxx",
+    "application": [],
+    "description": "xxx",
+    "cmd": [],
+    "kwargs": {},
+    "compute_resources": {'num_processors': 0,
+                          'num_gpus': 0}
+}
+
+workflow_template = {
+    "content_type": "workflow",
+    "name": "example",
+    "public": False,
+    "version": "xxx",
+    "owner": owner,
+    "uri": "xxx",
+    "reference": "xxx",
+    "application": [],
+    "workflow_type": "serial",
+    "workflow_list": [],
+    "description": "xxx",
+    "cmd": [],
+    "kwargs": {},
+}
+
+class ContentVariables:
+    MODEL_KEYS        = model_keys
+    APP_KEYS          = app_keys
+    WORKFLOW_KEYS     = workflow_keys
+    JOB_KEYS          = job_keys
+    OWNER             = owner
+    MODEL_TEMPLATE    = model_template
+    APP_TEMPLATE      = app_template
+    WORKFLOW_TEMPLATE = workflow_template
+    
+
 #connecting to mongoDB Atlas
 def conn_mongodb(collection='models'):
     # set a 10-second connection timeout
@@ -30,9 +101,31 @@ def conn_mongodb(collection='models'):
 
 
 def get_content_list(collection='models'):
+    """
+    Get data of a selection from mongodb
+    """
     sort_key = 'content_id'
     mycollection = conn_mongodb(collection)
     return list(mycollection.find({}).collation({'locale':'en'}).sort("name", pymongo.ASCENDING))
+
+
+def get_dash_table_data(collection='models', fields={}):
+    """
+    Get data wrt the selected fields of a selection from mongodb
+    """
+    sort_key = 'content_id'
+    mycollection = conn_mongodb(collection)
+    return list(mycollection.find({}, fields).collation({'locale':'en'}).sort("name", pymongo.ASCENDING))
+    
+
+def filter_dash_table_data(job_list, fields=[]):
+    """
+    Whitelist filter the selected key-value pair(s) in a list of dicts.
+    """
+    res = []
+    for data in job_list:
+        res.append({k:data[k] for k in fields}) 
+    return res
 
 
 def get_dropdown_options(collection='models'):
