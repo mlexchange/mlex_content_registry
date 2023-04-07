@@ -2,12 +2,8 @@
 import io
 import re
 
-import dash
+from dash import html, dcc, Input, Output, State, MATCH, ALL, ctx
 import dash_bootstrap_components as dbc
-import dash_html_components as html
-import dash_core_components as dcc
-import dash_bootstrap_components as dbc
-from dash.dependencies import Input, Output, State, MATCH, ALL
 
 import pymongo
 import uuid
@@ -15,30 +11,26 @@ import json
 import base64
 import requests
 
-from registry_util import conn_mongodb, get_content_list, get_dropdown_options, get_schema, \
-                    validate_json, is_duplicate, update_mongodb, remove_key_from_dict_list, \
-                    get_content, job_content_dict, send_webhook
+from registry_util import conn_mongodb, get_content_list, get_dash_table_data, filter_dash_table_data, \
+                    get_dropdown_options, get_schema, validate_json, is_duplicate, update_mongodb, \
+                    remove_key_from_dict_list, get_content, job_content_dict, send_webhook
 from form_generator import make_form_input, make_form_slider, make_form_dropdown, make_form_radio, \
                       make_form_bool, make_form_img, make_form_graph
 
-from targeted_callbacks import targeted_callback
-from kwarg_editor import JSONParameterEditor
+from dash_component_editor import JSONParameterEditor
 
-from app_layout import app, data_uploader, dash_forms, MODEL_TEMPLATE, APP_TEMPLATE, WORKFLOW_TEMPLATE, \
-                       MODEL_KEYS, APP_KEYS, WORKFLOW_KEYS, OWNER
+from app_layout import app, data_uploader, dash_forms, ContentVariables
 
 
 #----------------------------------- callback reactives ------------------------------------
 @app.callback(
     Output("table-model-list", "data"),
-    Input("table-contents-cache", "data"),  # automatically refresh table after delete, not after upload though; mlex_userhome need it.
+    Input("table-contents-memo", "data"),  # automatically refresh table after delete, not after upload though; mlex_userhome need it.
     Input("tab-group", "value"),
     Input("monitoring", "n_intervals")
     )
 def refresh_table(data, tab_value, n_intervals):
-    model_list = get_content_list(tab_value+'s')
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    
+    model_list = get_dash_table_data(collection=tab_value+'s', fields={key:1 for key in ContentVariables.MODEL_KEYS})
     return model_list
 
 
@@ -87,24 +79,22 @@ def toggle_open_app_button(tab_group):
     )
 def update_layout(tab_value):
     if tab_value == 'model':
-        return dash_forms('model'), True, False, False, [{'id': p, 'name': p} for p in MODEL_KEYS]
+        return dash_forms('model'), True, False, False, [{'id': p, 'name': p} for p in ContentVariables.MODEL_KEYS]
     elif tab_value == 'app':
-        return dash_forms('app'), False, True, False, [{'id': p, 'name': p} for p in APP_KEYS]
+        return dash_forms('app'), False, True, False, [{'id': p, 'name': p} for p in ContentVariables.APP_KEYS]
     elif tab_value == 'workflow':
-        return dash_forms('workflow'), False, False, True, [{'id': p, 'name': p} for p in WORKFLOW_KEYS]
-#     elif tab_value == 'resource':
-#         return dash_forms('model'), False, False, False, []
+        return dash_forms('workflow'), False, False, True, [{'id': p, 'name': p} for p in ContentVariables.WORKFLOW_KEYS]
 
 
 @app.callback( 
-    Output("table-contents-cache", "data"),
+    Output("table-contents-memo", "data"),
     Input('table-model-list', 'selected_rows'),
     Input('confirm-delete', 'n_clicks'),
     State("tab-group","value")
     )
 def delete_content(rows, n_click, tab_value):
     content_list = get_content_list(tab_value+'s')
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    changed_id = [p['prop_id'] for p in ctx.triggered][0]
     if 'confirm-delete' in changed_id:
         if rows:
             content_ids = [] 
@@ -120,8 +110,8 @@ def delete_content(rows, n_click, tab_value):
     return get_content_list(tab_value+'s')
 
 
-comp_labels = ['input form (int)', 'input form (float)', 'input form (str)', 'slider','dropdown','radio items','boolean toggle switch','image', 'graph uploader']
-comp_values = ['int', 'float', 'str', 'slider', 'dropdown', 'radio', 'bool', 'img', 'graph']
+comp_labels = ['input form (int)', 'input form (float)', 'input form (str)', 'slider','dropdown','radio items','boolean toggle switch','image'] #'graph uploader' (deprecated)
+comp_values = ['int', 'float', 'str', 'slider', 'dropdown', 'radio', 'bool', 'img'] #'graph'
 @app.callback(
     Output('dynamic-gui-container', 'children'),
     Input('gui-component-add', 'n_clicks'),
@@ -155,7 +145,7 @@ def display_component(n_clicks, children):
     prevent_initial_call = True
 )
 def display_output(value, n_cliks):
-    i = int(re.findall('(?<="index":)\\d+(?=,)', dash.callback_context.triggered[0]['prop_id'])[0])
+    i = int(re.findall('(?<="index":)\\d+(?=,)', ctx.triggered[0]['prop_id'])[0])
     if value in ['int','float','str']:
         return dbc.Card([dbc.Label("GUI paramerers for {} component".format(value), className="mr-2"), make_form_input(i)])
     elif value == 'dropdown':
@@ -259,16 +249,16 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                    workflow_children, children, n1, n2, upload_content, ports, file_name, file_date):
     
     
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    changed_id = [p['prop_id'] for p in ctx.triggered][0]
     #print(f'gui container children\n{children}')
     
-    json_document = MODEL_TEMPLATE.copy()  # shallow copy
+    json_document = ContentVariables.MODEL_TEMPLATE.copy()  # shallow copy
     if content_type == 'model':
         json_document["gui_parameters"] = []  # set the gui parameter list to empty
     if content_type == 'app':
-        json_document = APP_TEMPLATE.copy()
+        json_document = ContentVariables.APP_TEMPLATE.copy()
     elif content_type == 'workflow':
-        json_document = WORKFLOW_TEMPLATE.copy()
+        json_document = ContentVariables.WORKFLOW_TEMPLATE.copy()
         
     json_document["_id"] = str(uuid.uuid4())
     json_document["content_id"] = str(uuid.uuid4())
@@ -372,7 +362,7 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
             json_document = json.loads(base64.b64decode(upload_content.split(",")[1]))
             json_document["_id"] = str(uuid.uuid4()) 
             json_document["content_id"] = str(uuid.uuid4())
-            json_document["owner"] = OWNER
+            json_document["owner"] = ContentVariables.OWNER
             if "public" not in json_document:
                 json_document["public"] = False
             
@@ -392,7 +382,7 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
     State("json-store", "data")
 )
 def add_new_content(n1, n2, is_valid, json_document):
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    changed_id = [p['prop_id'] for p in ctx.triggered][0]
     if 'button-upload.n_clicks' in changed_id:
         if json_document and is_valid:
             mycollection = conn_mongodb(json_document['content_type']+'s')
@@ -415,7 +405,7 @@ def add_new_content(n1, n2, is_valid, json_document):
     State('json-store', 'data')
 )
 def validate_json_schema(n, data):
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    changed_id = [p['prop_id'] for p in ctx.triggered][0]
     if 'button-validate' in changed_id:
         if data:
             is_valid, msg = validate_json(data, data['content_type'])
@@ -426,13 +416,26 @@ def validate_json_schema(n, data):
         return ["", False]
 
 
-#--------------------------- targeted callbacks to display GUI components-----------------
-def show_dynamic_gui_layouts(n_clicks):
-    """
-    Show GUI components with inputs from the dynamic GUI generator.
-    """
-    data = dash.callback_context.states["json-store.data"]
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+@app.callback(
+    Output("download-text", "data"),
+    Input("btn-download-txt", "n_clicks"),
+    State("json-store", "data"),
+    prevent_initial_call=True,
+)
+def download_model(n_clicks, data):
+    filename = data["name"] + "_v" + data["version"]
+    return dict(content=json.dumps(data), filename="{}.json".format(filename))
+
+
+#--------------------------- Duplicated callbacks to update GUI components (demonstration)--------------------
+@app.callback(
+    Output("gui-layout", "children", allow_duplicate=True),
+    Input("gui-check", "n_clicks"),
+    State("json-store", "data"),
+    prevent_initial_call=True
+)
+def show_gui_layouts(n_clicks, data):
+    changed_id = [p['prop_id'] for p in ctx.triggered][0]
     if 'gui-check' in changed_id and 'gui_parameters' in data:
         if data["gui_parameters"]:                    
             item_list = JSONParameterEditor( _id={'type': 'parameter_editor'},   # pattern match _id (base id), name
@@ -444,18 +447,16 @@ def show_dynamic_gui_layouts(n_clicks):
             return[""]
     else:
         return [""]
+        
 
-targeted_callback(
-    show_dynamic_gui_layouts,
-    Input("gui-check", "n_clicks"),
-    Output("gui-layout", "children"),
+@app.callback(
+    Output("gui-layout", "children", allow_duplicate=True),
+    Input("button-validate", "n_clicks"),
     State("json-store", "data"),
-    app=app)
-
-
-def show_gui_layouts(n_clicks):
-    data = dash.callback_context.states["json-store.data"]
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    prevent_initial_call=True
+)
+def show_gui_layouts(n_clicks, data):
+    changed_id = [p['prop_id'] for p in ctx.triggered][0]
     if 'button-validate' in changed_id and 'gui_parameters' in data:
         if data["gui_parameters"]:
             is_valid, msg = validate_json(data, data['content_type'])
@@ -472,40 +473,22 @@ def show_gui_layouts(n_clicks):
     else:
         return [""]
 
-targeted_callback(
-    show_gui_layouts,
-    Input("button-validate", "n_clicks"),
-    Output("gui-layout", "children"),
-    State("json-store", "data"),
-    app=app)
-
-
-@app.callback(
-    Output("download-text", "data"),
-    Input("btn-download-txt", "n_clicks"),
-    State("json-store", "data"),
-    prevent_initial_call=True,
-)
-def download_model(n_clicks, data):
-    filename = data["name"] + "_v" + data["version"]
-    return dict(content=json.dumps(data), filename="{}.json".format(filename))
-
-
 #---------------------------------- launch jobs ------------------------------------------
 @app.callback(
     Output("dummy", "data"),
     Input("button-launch", "n_clicks"),
     Input("terminate-user-jobs", "n_clicks"),
-    State("table-model-list", "data"),
+    #State("table-model-list", "data"),
+    State("table-contents-memo", "data"),
     State('table-model-list', 'selected_rows'),
-    State("table-job-list", "data"),
+    State("table-job-memo", "data"),
     State('table-job-list', 'selected_rows'),
     State("tab-group","value"),
     prevent_initial_call=True,
 )
 def apps_jobs(n_clicks, n_terminate, data, rows, job_data, job_rows, tab_value):
     user_id = '001'
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    changed_id = [p['prop_id'] for p in ctx.triggered][0]
     if "button-launch.n_clicks" in changed_id:
         job_request = {'user_uid': user_id,
                        'host_list': ['mlsandbox.als.lbl.gov', 'local.als.lbl.gov', 'vaughan.als.lbl.gov'],
@@ -571,110 +554,9 @@ def apps_jobs(n_clicks, n_terminate, data, rows, job_data, job_rows, tab_value):
     return ''
 
 
-# @app.callback(
-#     Output("dummy", "data"),
-#     Input("button-launch", "n_clicks"),
-#     State('table-model-list', 'selected_rows'),
-#     State("table-contents-cache", "data"),
-#     State("tab-group","value"),
-#     prevent_initial_call=True,
-# )
-# def launch_jobs(n_clicks, rows, data, tab_value):
-#     compute_dict = {'user_uid': '001',
-#                     'host_list': ['mlsandbox.als.lbl.gov', 'local.als.lbl.gov', 'vaughan.als.lbl.gov'],
-#                     'requirements': {'num_processors': 2,
-#                                      'num_gpus': 0,
-#                                      'num_nodes': 2},
-#                     }
-#     if tab_value == 'workflow':
-#         for row in rows:
-#             job_list = []
-#             dependency = {}
-#             if data[row].get('workflow_list'):
-#                 workflow_list = data[row]['workflow_list']
-#                 for i,job_id in enumerate(workflow_list):
-#                     job_list.append(job_content_dict(get_content(job_id)))
-#                     dependency[str(i)] = []
-#                     if data[row]['workflow_type'] == 'serial':
-#                         for j in range(i):
-#                             dependency[str(i)].append(j) 
-# 
-#             compute_dict['job_list'] = job_list
-#             compute_dict['dependencies'] = dependency
-#             compute_dict['description'] = data[row]['name']+' v'+data[row]['version']
-#             if len(job_list)==1:
-#                 compute_dict['requirements']['num_nodes'] = 1
-#             response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-#     
-#     elif tab_value == 'model' or tab_value == 'app':
-#         job_list = []
-#         dependency = {}
-#         job_names = ''
-#         for i,row in enumerate(rows):
-#             job_content = job_content_dict(data[row])
-#             print(f'job_content\n{job_content}')
-#             job_list.append(job_content) 
-#             dependency[str(i)] = []  #all modes and apps are regarded as independent at this time
-#             job_names += job_content['mlex_app'] + ', '
-#         
-#         compute_dict['job_list'] = job_list
-#         compute_dict['dependencies'] = dependency
-#         compute_dict['description'] = 'parallel workflow: ' + job_names
-#         if len(job_list) == 1:
-#             compute_dict['requirements']['num_nodes'] = 1
-#         response = requests.post('http://job-service:8080/api/v0/workflows', json=compute_dict)
-#         
-#     return ''
-
-
-
-
-# @app.callback(
-#     Output("table-job-list", "data"),
-#     Input("button-refresh-jobs", "n_clicks"),
-#     prevent_initial_call=True,
-# )
-# def refresh_jobs_table(n):
-#     token_info = get_user_info()
-#     user_id = token_info.get("user_id")
-#     job_list = []
-#     response_get = requests.get(f'http://job-service:8080/api/v0/jobs?user={user_id}').json()
-#     for i,job in enumerate(response_get):
-#         job_uid = job['uid']
-#         job['submission_time'] = job['timestamps']['submission_time']
-#         job['execution_time'] = job['timestamps']['execution_time']
-#         job['job_status'] = job['status']['state']
-#         job['description'] = job['job_kwargs']['uri']
-#         job_list.append(job)
-# 
-#     return job_list
-
-
-# @app.callback(
-#     Output("web-urls", "data"),
-#     Input("button-open-window", "n_clicks"),
-#     State("table-job-list", "data"),
-#     State('table-job-list', 'selected_rows'),
-#     prevent_initial_call=True,
-# )
-# def update_app_url(n_clicks, jobs, rows):
-#     web_urls = []
-#     if bool(rows):
-#         for row in rows:
-#             if jobs[row]['service_type'] == 'frontend' and 'map' in jobs[row]['job_kwargs']:
-#                 mapping = jobs[row]['job_kwargs']['map']
-#                 for key in mapping:
-#                     port = mapping.get(key)
-#                     if port:
-#                         port=port[0]["HostPort"]
-#                         web_url = f"http://mlsandbox.als.lbl.gov:{port}"    #f"https://{port}.mlexchangebeta.als.lbl.gov"
-#                         web_urls.append(web_url)
-#     
-#     return web_urls
-
-
 @app.callback(
     Output("table-job-list", "data"),
+    Output("table-job-memo", "data"),
     Input("tab-group","value"),
     Input("monitoring", "n_intervals"),
     prevent_initial_call=True,
@@ -698,13 +580,13 @@ def jobs_table(tab_value, n_interval):
             job['description'] = job['job_kwargs']['uri']
         job_list.append(job)
 
-    return job_list[::-1]
+    return filter_dash_table_data(job_list[::-1], ContentVariables.JOB_KEYS), job_list[::-1]
 
 
 @app.callback(
     Output("web-urls", "data"),
     Input("button-open-window", "n_clicks"),
-    State("table-job-list", "data"),
+    State("table-job-memo", "data"),
     State('table-job-list', 'selected_rows'),
     prevent_initial_call=True,
 )
@@ -736,27 +618,6 @@ app.clientside_callback(
     Output('dummy1', 'data'),
     Input('web-urls', 'data'),
 )
-
-
-# @app.callback(
-#     Output("dummy2", "data"),
-#     Input("button-terminate", "n_clicks"),
-#     State("table-job-list", "data"),
-#     State("tab-group","value"),
-#     State('table-job-list', 'selected_rows'),
-#     prevent_initial_call=True,
-# )
-# def terminate_jobs(n_clicks, jobs, tab_value, rows):
-#     if rows:
-#         for row in rows:
-#             job_id = jobs[row]['uid']
-#             print(f'terminate uid {job_id}')
-#             if tab_value == 'workflow':
-#                 response = requests.patch(f'http://job-service:8080/api/v0/workflows/{job_id}/terminate')
-#             elif tab_value == 'model' or tab_value == 'app':
-#                 response = requests.patch(f'http://job-service:8080/api/v0/jobs/{job_id}/terminate')
-#     
-#     return ''
 
 
 if __name__ == '__main__':
