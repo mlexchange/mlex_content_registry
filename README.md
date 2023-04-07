@@ -1,4 +1,6 @@
 # MLExchange Content Registry
+This is the first Dash 2 version of Content Registry.  
+
 Content registry and its API for the MLExchange platform.
 The architecture looks like below.
 
@@ -15,11 +17,13 @@ Contents include:
 Requirements: MLExchange compute_api
 
 **Running content registry**.   
-1. Create the same environmental file (.env) as the one used in the compute api:
-```
-MONGO_DB_USERNAME=your_username
-MONGO_DB_PASSWORD=your_password                 
-```   
+
+1. Create the same environmental file (.env) as the one used in the compute api.
+
+	```	
+	MONGO_DB_USERNAME=your_username     
+	MONGO_DB_PASSWORD=your_password               
+	```	   
 2. If it was the first time running MLExchange content registry, you need to initialize its database using the command `./init_db.sh`. If the error msg says 'duplicate key error collection', it means the content database is already existent.    
 3. Run `docker-compose up --build`.
 
