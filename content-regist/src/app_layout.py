@@ -1,12 +1,8 @@
 # #!/usr/bin/env Python3
 
-import dash
+from dash import Dash, dash_table, html, dcc
 import dash_bootstrap_components as dbc
-import dash_html_components as html
-import dash_core_components as dcc
-import dash_table
-
-from registry_util import get_content_list
+from registry_util import ContentVariables, get_content_list, get_dash_table_data
 
 job_list = []
 try:
@@ -14,121 +10,60 @@ try:
 except Exception:
     print("Unable to connect to the server.")
 
-MODEL_KEYS    = ['name', 'version', 'owner', 'type', 'uri', 'description']
-APP_KEYS      = ['name', 'version', 'owner', 'uri', 'description']
-WORKFLOW_KEYS = ['name', 'version', 'owner', 'workflow_type', 'description']
-JOB_KEYS      = ['description', 'service_type', 'submission_time', 'execution_time', 'job_status']
-
-OWNER = 'mlexchange team'
-
-MODEL_TEMPLATE = {
-    "content_type": "model",
-    "name": "example",
-    "public": False,
-    "version": "xxx",
-    "type": "xxx",
-    "owner": OWNER,
-    "service_type": "backend",
-    "uri": "xxx",
-    "reference": "xxx",
-    "application": [],
-    "description": "xxx",
-    "gui_parameters": [],
-    "cmd": [],
-    "kwargs": {},
-    "compute_resources": {'num_processors': 0,
-                          'num_gpus': 0}
-}
-
-APP_TEMPLATE = {
-    "content_type": "app",
-    "name": "example",
-    "public": False,
-    "version": "xxx",
-    "owner": OWNER,
-    "service_type": "frontend",
-    "uri": "xxx",
-    "reference": "xxx",
-    "application": [],
-    "description": "xxx",
-    "cmd": [],
-    "kwargs": {},
-    "compute_resources": {'num_processors': 0,
-                          'num_gpus': 0}
-}
-
-WORKFLOW_TEMPLATE = {
-    "content_type": "workflow",
-    "name": "example",
-    "public": False,
-    "version": "xxx",
-    "owner": OWNER,
-    "uri": "xxx",
-    "reference": "xxx",
-    "application": [],
-    "workflow_type": "serial",
-    "workflow_list": [],
-    "description": "xxx",
-    "cmd": [],
-    "kwargs": {},
-}
-
 
 external_stylesheets = [dbc.themes.BOOTSTRAP, "../assets/segmentation-style.css",]  # need to use bootstrap themes
-
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-
+app = Dash(__name__, external_stylesheets=external_stylesheets)
 
 #-------------------------------------- function -----------------------------------------
 def dash_forms(type):
     forms = [
-        dbc.FormGroup(
+        dbc.Col(
             [
                 dbc.Label("Please give a name for the {}.".format(type)),
                 dbc.Input(id="name-regist", type="text", placeholder="Enter {} name.".format(type), debounce=True),
             ],
         ),
-        dbc.FormGroup(
+        dbc.Col(
             [
                 dbc.Label("Please provide the version for the {}.".format(type) ),
                 dbc.Input(id="version-regist", type="text", placeholder="Enter {} version.".format(type), debounce=True),
             ],
         ),
-        dbc.FormGroup(
+        dbc.Col(
             [
                 dbc.Label("Please provide the URI for the {}.".format(type) ),
                 dbc.Input(id="uri-regist", type="text", placeholder="Enter the URI.", debounce=True),
             ],
         ),
-        dbc.FormGroup(
+        dbc.Col(
             [
                 dbc.Label("Enter reference for the {}.".format(type) ),
                 dbc.Input(id="reference-regist", type="text", placeholder="Enter reference.",debounce=True),
             ],
         ),
-        dbc.FormGroup(
+        dbc.Col(
             [ dbc.Label("Enter the commands to deploy the {}. Use comma to separate.".format(type), className="mr-2"),
               dbc.Input(id="cmd-regist", type="text", placeholder="Enter commands to deploy the {}".format(type), debounce=True),
             ],
         ),
-        dbc.FormGroup(
+        dbc.Col(
             [ dbc.Label("Enter any other kwargs to deploy the {} (optional). Use double quotes to construct the kwargs dictionary.".format(type), className="mr-2"),
               dbc.Input(id="kwargs-regist", type="text", placeholder="Enter kwargs to deploy the {}".format(type), debounce=True),
             ],
         ),
-        dbc.FormGroup(
+        dbc.Col(
             [
                 dbc.Label("Enter description (optional) for the {}.".format(type) ),
                 dbc.Input(id="description-regist", type="text", placeholder="Enter description.",debounce=True),
             ],
         ),
-        dbc.FormGroup(
+        dbc.Col(
             [
                 dbc.Label("Enter application(s) for the {} (e.g., image segmentation). Use comma to separate.".format(type) ),
                 dbc.Input(id="application-regist", type="text", placeholder="Enter applications for this {}".format(type),debounce=True),
             ],
         ),
-        dbc.FormGroup([
+        dbc.Col([
             dbc.Label('Set Accessibility'),
             dbc.RadioItems(
                 options=[{'label' : 'private', 'value': False},
@@ -183,7 +118,7 @@ header= dbc.Navbar(
 
 
 MODEL_REGISTRY = html.Div([
-    dbc.FormGroup([
+    dbc.Col([
         dbc.Label('Choose Model Type', className='mr-2'),
         dbc.RadioItems(
             options=[
@@ -196,7 +131,7 @@ MODEL_REGISTRY = html.Div([
             labelStyle={'margin': '6px'}
         ),
     ]),
-    dbc.FormGroup(
+    dbc.Col(
         [   dbc.Label("Resources requirement", className="mr-2"),
             html.Div([
                 dbc.Label("CPU", className="mr-2"),
@@ -220,7 +155,7 @@ MODEL_REGISTRY = html.Div([
     dbc.Button(
         "Double-click to See GUI Component(s)",
         id="gui-check",
-        className="mr-2",
+        className="m-2",
         color="success",
         size="sm",
         style={'width':'55%'},
@@ -230,7 +165,7 @@ MODEL_REGISTRY = html.Div([
 ])
 
 APP_REGISTRY = html.Div([
-    dbc.FormGroup([
+    dbc.Col([
       dbc.Label('App Type'),
       dbc.RadioItems(
           options=[
@@ -244,7 +179,7 @@ APP_REGISTRY = html.Div([
       ),
     ]),
     dbc.Collapse(
-        children=dbc.FormGroup(
+        children=dbc.Col(
             [
                 dbc.Label("Please input porting for the frontend app. Use comma to separate if there are more than one."),
                 dbc.Input(id="app-port", type="text", placeholder="Enter port_number/method (e.g. 8061/tcp).", debounce=True),
@@ -253,7 +188,7 @@ APP_REGISTRY = html.Div([
         id="collapse-app-port",
         is_open=False,
     ),
-    dbc.FormGroup(
+    dbc.Col(
             [   dbc.Label("Resources requirement", className="mr-2"),
                 html.Div([
                     dbc.Label("CPU", className="mr-2"),
@@ -268,7 +203,7 @@ APP_REGISTRY = html.Div([
 ])
 
 WORKFLOW_REGISTRY = html.Div([
-    dbc.FormGroup([
+    dbc.Col([
         dbc.Label('Choose wrokflow execution'),
         dbc.RadioItems(
             options=[
@@ -281,7 +216,7 @@ WORKFLOW_REGISTRY = html.Div([
             labelStyle={'margin': '6px'}
         ),
     ]),
-    dbc.FormGroup([
+    dbc.Col([
         dbc.Button(
                 "+ Add a Content to Form a Workflow",
                 id="workflow-group-add",
@@ -330,12 +265,12 @@ register_model = dbc.Card(
                         className="mr-1",
                         color="success",
                         size="sm",
-                        style={'width':'40%', 'margin': '10px', 'margin-left': '15px'}
+                        style={'width':'40%', 'margin-left': '15px'}
                     ),
                     dbc.Label('after filling out the forms below. Then,'),
                     ],
-                    className='row',
-                    style={'align-items': 'center', 'justify-content': 'left'}
+                    className="d-grid gap-2 d-md-flex justify-content-md-front",
+                    style ={'margin-bottom': '10px'},
                 ),
                 html.Div(
                     [
@@ -356,11 +291,10 @@ register_model = dbc.Card(
                             style={'width':'45%', 'margin-left': '15px'}
                         ),
                     ],
-                    className='row',
-                    style={'align-items': 'center', 'justify-content': 'left', 'margin-bottom': '20px'}
+                    className="d-grid gap-2 d-md-flex justify-content-md-front",
                 ),
                 ],
-                style={'align-items': 'center', 'justify-content': 'center', 'margin-bottom': '20px'},   
+                style={'align-items': 'center', 'justify-content': 'center', 'margin-bottom': '15px'},   
             ),
             html.Div(id='tab-display', children=dbc.Form(children=dash_forms('model'))),
             dbc.Collapse(
@@ -417,7 +351,7 @@ upload_model = dbc.Card(
                             dbc.Button(
                                  "Validate Content Document",
                                 id="button-validate",
-                                className="mr-2",
+                                className="m-1",
                                 color="success",
                                 size="sm",
                                 style={'width':'40%', 'margin-top': '10px'}
@@ -425,6 +359,7 @@ upload_model = dbc.Card(
                             dbc.Button(
                                 "Upload Content Document",
                                 id="button-upload",
+                                className="m-1",
                                 color="success",
                                 size="sm",
                                 style={'width':'40%', 'margin-top': '10px'}
@@ -486,14 +421,14 @@ table_models = dbc.Card(
                 children = [
                 dash_table.DataTable(
                     id='table-model-list',
-                    columns=[{'id': p, 'name': p} for p in MODEL_KEYS],
-                    data=model_list,
+                    columns=[{'id': p, 'name': p} for p in ContentVariables.MODEL_KEYS],
+                    data=get_dash_table_data(fields={key:1 for key in ContentVariables.MODEL_KEYS}),
                     row_selectable='single',
                     page_size=6,
                     editable=False,
                     style_cell={'padding': '0.5rem', 'textAlign': 'left'},
                     css=[{"selector": ".show-hide", "rule": "display: none"}],
-                    style_table={'height':'15rem', 'overflowY': 'auto'}
+                    style_table={'height':'15rem', 'overflowY': 'auto'},
                 ),
             ]),
             #dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True),
@@ -512,7 +447,6 @@ table_jobs = dbc.Card(
                         children=[dbc.Button(
                                     "Open the Selected Frontend App(s)",
                                     id="button-open-window",
-                                    className="mtb-2",
                                     color="success",
                                     size="sm",
                                     n_clicks=0,
@@ -523,19 +457,20 @@ table_jobs = dbc.Card(
                     dbc.Button(
                         "Terminate the Selected",
                         id="terminate-user-jobs",
-                        className="m-2",
                         color="warning",
                         size="sm",
                         n_clicks=0,
-                    )],
-                className='row',
-                style={'align-items': 'center', 'margin-left': '1px'}
+                        style={'width':'20%'}
+                    )
+                ],
+                className="d-grid gap-2 d-md-flex justify-content-md-front",
+                style={'margin-bottom': '10px'}
             ),
             html.Div(
                 children = [
                 dash_table.DataTable(
                     id='table-job-list',
-                    columns=[{'id': p, 'name': p} for p in JOB_KEYS],
+                    columns=[{'id': p, 'name': p} for p in ContentVariables.JOB_KEYS],
                     data=job_list,
                     row_selectable='single',
                     page_size=6,
@@ -555,13 +490,13 @@ meta = [
     html.Div(
         id="no-display",
         children=[   
-            dcc.Store(id="json-store", data=MODEL_TEMPLATE.copy()),
+            dcc.Store(id="json-store", data=ContentVariables.MODEL_TEMPLATE.copy()),
             dcc.Store(id="nothing", data=''),
             dcc.Store(id="web-urls", data=[]),
             dcc.Store(id="dummy", data=''),
             dcc.Store(id="dummy1", data=''),
-            dcc.Store(id="dummy2", data=''),
-            dcc.Store(id="table-contents-cache", data=[]),
+            dcc.Store(id="table-job-memo", data=[]),
+            dcc.Store(id="table-contents-memo", data=model_list),
             dcc.Store(id='validation', data=0),
             dcc.Interval(
                 id='monitoring',
