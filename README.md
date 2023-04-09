@@ -14,7 +14,7 @@ Contents include:
 	- 
 
 ## How to use
-Requirements: MLExchange compute_api
+Prerequisite: install [mlex_compute_api](https://github.com/mlexchange/mlex_computing_api)
 
 **Running content registry**.   
 
