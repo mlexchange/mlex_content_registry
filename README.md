@@ -37,6 +37,11 @@ Select contents from the table and click **Delete** button.
 Currently, the **Modify** button is deprecated. 
 Therefore, the easiest way to modify an existing registration is to delete the content, then either register a new content by filling out the forms or upload the revised JSON document again (drag and drop, click **Validate** button first, then click the **Upload** button).
 
+
+## Adaptive Dash GUI component
+**name**: a unique string, equivalent to the `id` in each Dash component   
+**param_key**: a parameter key generally used to construct the `cmd` in job dictionary for MLExchange compute api  
+
 ## API calls
 get\_models()  
 get\_model(uid) 
