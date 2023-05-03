@@ -63,8 +63,8 @@ delete\_assets(query)
 delete\_asset(uid) 
 
 ## Author
-Author: Zhuowen (Kevin) Zhao  
-Correspondence: zzhao2@lbl.gov  
+Name: [Zhuowen Zhao](https://github.com/zhuowenzhao)  
+Correspondence: [zzhao2@lbl.gov](mailto:zzhao2@lbl.gov)   
 Date: 10/21/2021
 
 
