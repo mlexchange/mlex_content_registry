@@ -109,19 +109,23 @@ def get_content_list(collection='models'):
     return list(mycollection.find({}).collation({'locale':'en'}).sort("name", pymongo.ASCENDING))
 
 
-def get_dash_table_data(collection='models', fields={}):
+def get_dash_table_data(collection='models', fields=None):
     """
     Get data wrt the selected fields of a selection from mongodb
     """
+    if fields is None:
+        fields = {}
     sort_key = 'content_id'
     mycollection = conn_mongodb(collection)
     return list(mycollection.find({}, fields).collation({'locale':'en'}).sort("name", pymongo.ASCENDING))
     
 
-def filter_dash_table_data(job_list, fields=[]):
+def filter_dash_table_data(job_list, fields=None):
     """
     Whitelist filter the selected key-value pair(s) in a list of dicts.
     """
+    if fields is None:
+        fields = []
     res = []
     for data in job_list:
         res.append({k:data[k] for k in fields}) 
