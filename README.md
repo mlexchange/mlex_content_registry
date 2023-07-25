@@ -14,7 +14,7 @@ Contents include:
 	- 
 
 ## How to use
-Prerequisite: install [mlex_compute_api](https://github.com/mlexchange/mlex_computing_api)
+Prerequisite: install [mlex\_compute\_api](https://github.com/mlexchange/mlex_computing_api)
 
 **Running content registry**.   
 
@@ -61,11 +61,6 @@ get\_assets()
 get\_asset(uid) 
 delete\_assets(query)  
 delete\_asset(uid) 
-
-## Author
-Name: [Zhuowen Zhao](https://github.com/zhuowenzhao)  
-Correspondence: [zzhao2@lbl.gov](mailto:zzhao2@lbl.gov)   
-Date: 10/21/2021
 
 
 ## License
