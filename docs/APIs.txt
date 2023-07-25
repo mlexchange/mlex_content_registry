@@ -1,0 +1,4 @@
+API endpoints:
+1. get all models: http://content-api:8000/api/v0/models 
+2. get a specific model (content): http://content-api:8000/api/v0/contents/{content_uid}/content
+2. get model GUI parameters and filter by group: http://content-api:8000/api/v0/models/{model_uid}/model/{comp_group}/gui_params 
