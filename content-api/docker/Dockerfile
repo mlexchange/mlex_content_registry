@@ -5,7 +5,7 @@ RUN ls
 COPY docker/requirements.txt requirements.txt
 
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    #build-essential \
     wget \
     python3-pip\
     ffmpeg\

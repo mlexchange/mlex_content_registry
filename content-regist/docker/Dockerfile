@@ -3,7 +3,7 @@ FROM python:3.9
 COPY docker/requirements.txt requirements.txt
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-         build-essential\
+         #build-essential\
          libsm6 \
          libxext6 \
          libxrender-dev \
