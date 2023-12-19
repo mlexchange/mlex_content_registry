@@ -1,21 +1,17 @@
 FROM python:3.9
 MAINTAINER THE MLEXCHANGE TEAM
 
-RUN ls
-COPY docker/requirements.txt requirements.txt
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    wget \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip\
-    ffmpeg\
-    libsm6\
     libxext6 
+
+
+COPY docker/requirements.txt requirements.txt
 
 RUN pip3 install --upgrade pip &&\
     pip3 install --timeout=5000 -r requirements.txt 
 
-#EXPOSE 8000
 
 WORKDIR /app/api
 ENV HOME /app/api
