@@ -14,7 +14,6 @@ Contents include:
 	- 
 
 ## How to use
-It is recommended using `stable` branch.
 
 Prerequisite: install [mlex\_compute\_api](https://github.com/mlexchange/mlex_computing_api)
 
