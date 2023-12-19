@@ -438,7 +438,7 @@ def show_gui_layouts(n_clicks, data):
     changed_id = [p['prop_id'] for p in ctx.triggered][0]
     if 'gui-check' in changed_id and 'gui_parameters' in data:
         if data["gui_parameters"]:                    
-            item_list = JSONParameterEditor( _id={'type': 'parameter_editor'},   # pattern match _id (base id), name
+            item_list = JSONParameterEditor( _id={'type': str(uuid.uuid4())}, #'parameter_editor'},   # pattern match _id (base id), name
                                              json_blob=remove_key_from_dict_list(data["gui_parameters"], "comp_group"),
                                             )
             item_list.init_callbacks(app)

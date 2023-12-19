@@ -1,28 +1,20 @@
-from debian:11
-#FROM python:3.9
-MAINTAINER THE MLEXCHANGE TEAM
-
-RUN apt-get update
-
-RUN apt-get install -y \
-    apt-transport-https \
-    ca-certificates \
-    dnsutils \
-    curl \
-    gnupg \
-    lsb-release
-
-
-RUN apt-get update
-
-RUN apt-get install -y python3-pip\
-    python3
-
+FROM python:3.9
 
 COPY docker/requirements.txt requirements.txt
 
-RUN pip3 install --upgrade pip &&\
-    pip3 install --timeout=5000 -r requirements.txt 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+         build-essential\
+         libsm6 \
+         libxext6 \
+         libxrender-dev \
+         ffmpeg  \
+	 tree \
+    python3-pip &&\
+    pip install --upgrade pip  
+
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+#RUN pip install git+https://github.com/mlexchange/mlex_dash_component_editor.git
 
 
 WORKDIR /app/content-regist
@@ -30,8 +22,6 @@ ENV HOME /app/content-regist
 COPY src src
 COPY data data
 ENV PYTHONUNBUFFERED=1
-
-#ENTRYPOINT [ "python3" ]
 
 
 CMD ["bash"]
