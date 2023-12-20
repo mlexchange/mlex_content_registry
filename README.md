@@ -14,7 +14,7 @@ Contents include:
 ## How to use
 Requirements: install [mlex\_compute\_api](https://github.com/mlexchange/mlex_computing_api)
 
-**Note:** This version connects to a cloud mongodb service. Please checkout the `main` branch for the version using a local mongo instance. 
+**Note:** This version connects to our cloud mongodb service. Please checkout the `main` branch for the version using a local mongo instance. 
 
 **Running content registry**     
 1. Create an environmental file (.env). Please contact the MLExchange Team for an Mongodb Atlas access token.  
@@ -53,12 +53,6 @@ get\_assets()
 get\_asset(uid) 
 delete\_assets(query)  
 delete\_asset(uid) 
-
-## Author
-Name: [Zhuowen Zhao](https://github.com/zhuowenzhao)   
-Correspondence: [zzhao2@lbl.gov](mailto:zzhao2@lbl.gov)  
-Date: 10/21/2021  
-
 
 ## License
 MLExchange Copyright (c) 2021, The Regents of the University of California,
