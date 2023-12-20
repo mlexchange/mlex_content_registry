@@ -14,7 +14,7 @@ Contents include:
 ## How to use
 Requirements: install [mlex\_compute\_api](https://github.com/mlexchange/mlex_computing_api)
 
-**Note:** This version connects to our cloud mongodb service. Please checkout the `main` branch for the version using a local mongo instance. 
+**Note:** This version connects to our cloud mongodb service. Please checkout the `main` branch for using a local mongo instance. 
 
 **Running content registry**     
 1. Create an environmental file (.env). Please contact the MLExchange Team for an Mongodb Atlas access token.  
