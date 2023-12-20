@@ -17,6 +17,8 @@ Contents include:
 
 Prerequisite: install [mlex\_compute\_api](https://github.com/mlexchange/mlex_computing_api)
 
+Note: This version connects to a local mongo container named `mongodb` with a port number 27017. Please checkout the `atlas` branch for the version using our cloud mongodb service.
+
 **Running content registry**.   
 
 1. Create the same environmental file (.env) as the one used in the compute api.
