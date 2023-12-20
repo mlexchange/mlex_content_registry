@@ -12,10 +12,17 @@ Contents include:
 	- 
 
 ## How to use
-Requirements: MLExchange compute_api
+Requirements: install [mlex\_compute\_api](https://github.com/mlexchange/mlex_computing_api)
 
-**Running content registry**   
-`docker-compose up --build`
+**Note:** This version connects to a cloud mongodb service. Please checkout the `main` branch for the version using a local mongo instance. 
+
+**Running content registry**     
+1. Create an environmental file (.env). Please contact the MLExchange Team for an Mongodb Atlas access token.  
+
+	```	
+	ATLAS_USER=general_user_access_token (read) or admin_access_token (read/write)             
+	```	      
+2. Run `docker-compose up --build`.
 
 **Viewing existing contents**  
 Scroll down to the bottom of the page, click on **Refresh** button.
