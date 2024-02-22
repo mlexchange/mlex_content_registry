@@ -13,6 +13,10 @@ Contents include:
 	- assets (metadata, e.g., tags, trained models etc.) 
 	- 
 
+### GUI
+![image info](./assets/gui.png)
+
+
 ## How to use
 
 Prerequisite: install [mlex\_compute\_api](https://github.com/mlexchange/mlex_computing_api)
@@ -27,7 +31,10 @@ Prerequisite: install [mlex\_compute\_api](https://github.com/mlexchange/mlex_co
 	MONGO_DB_USERNAME=your_username     
 	MONGO_DB_PASSWORD=your_password               
 	```	   
-2. If it was the first time running MLExchange content registry, you need to initialize its database using the command `./init_db.sh`. If the error msg says 'duplicate key error collection', it means the content database is already existent.    
+2. If it was the first time running MLExchange content registry, you need to initialize its database using the command `./init_db.sh`. If the error msg says 'duplicate key error collection', it means the content database is already existent. 
+
+	**Note:** to re-initialize the database, it is suggested to first clean `/dump` folder in the local mongodb container.
+   
 3. Run `docker-compose up --build`.
 
 **Viewing existing contents**  
