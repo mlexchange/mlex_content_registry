@@ -241,20 +241,6 @@ def workflow_dependency(workflow):
                 
     return workflow_list, dependency
 
-
-# def construct_dependency(uid: str):
-#     content = get_content(uid)
-#     job_list = []
-#     dependencies = {}
-#     if content['content_typ'] == 'workflow':
-#         workflow_list, workflow_dependency_list = workflow_dependency(content)
-#         for workflow_id in workflow_list:
-#             if workflow_id not in job_list:
-#                 job_list.append(workflow_id)
-#                 dependencies[workflow_id] = []
-#             dependencies[workflow_id].extend(workflow_dependency_list)
-
-
 def job_content_dict(content, user_id):
     job_content = {'mlex_app': content['name'],
                    'service_type': content['service_type'],
@@ -284,16 +270,12 @@ def send_webhook(msg):
         # Returns an HTTPError if an error has occurred during the process (used for debugging).
         resp.raise_for_status()
     except requests.exceptions.HTTPError as err:
-        #print("An HTTP Error occurred",repr(err))
         pass
     except requests.exceptions.ConnectionError as err:
-        #print("An Error Connecting to the API occurred", repr(err))
         pass
     except requests.exceptions.Timeout as err:
-        #print("A Timeout Error occurred", repr(err))
         pass
     except requests.exceptions.RequestException as err:
-        #print("An Unknown Error occurred", repr(err))
         pass
     except:
         pass
