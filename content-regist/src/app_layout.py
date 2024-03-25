@@ -431,59 +431,9 @@ table_models = dbc.Card(
                     style_table={'height':'15rem', 'overflowY': 'auto'},
                 ),
             ]),
-            #dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True),
         ])
     ]
 )
-
-
-table_jobs = dbc.Card(
-    id ='running-jobs',
-    children = [
-        dbc.CardBody([
-            html.Div(
-                children = [
-                    dbc.Collapse(
-                        children=[dbc.Button(
-                                    "Open the Selected Frontend App(s)",
-                                    id="button-open-window",
-                                    color="success",
-                                    size="sm",
-                                    n_clicks=0,
-                                  )],
-                        id="collapse-open-app",
-                        is_open=True,
-                    ),
-                    dbc.Button(
-                        "Terminate the Selected",
-                        id="terminate-user-jobs",
-                        color="warning",
-                        size="sm",
-                        n_clicks=0,
-                        style={'width':'20%'}
-                    )
-                ],
-                className="d-grid gap-2 d-md-flex justify-content-md-front",
-                style={'margin-bottom': '10px'}
-            ),
-            html.Div(
-                children = [
-                dash_table.DataTable(
-                    id='table-job-list',
-                    columns=[{'id': p, 'name': p} for p in ContentVariables.JOB_KEYS],
-                    data=job_list,
-                    row_selectable='single',
-                    page_size=6,
-                    editable=False,
-                    style_cell={'padding': '0.5rem', 'textAlign': 'left'},
-                    css=[{"selector": ".show-hide", "rule": "display: none"}],
-                    style_table={'height':'15rem', 'overflowY': 'auto'}
-                ),
-            ])
-        ])
-    ]
-)
-
 
 # metadata
 meta = [
@@ -507,7 +457,6 @@ meta = [
     ),
 ]
 
-
 # Setting up initial webpage layout
 app.layout = html.Div (
         [
@@ -516,10 +465,7 @@ app.layout = html.Div (
                 [
                     dbc.Row([dbc.Col(register_model, width=6), dbc.Col(upload_model, width=6)]),
                     dbc.Row(dbc.Col(table_models, width=12)),
-                    dbc.Row(dbc.Col(table_jobs, width=12)),
                     dbc.Row(meta)
                 ]
             ),
 ])
-
-
