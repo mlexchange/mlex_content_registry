@@ -19,23 +19,20 @@ Contents include:
 
 ## How to use
 
-Prerequisite: install [mlex\_compute\_api](https://github.com/mlexchange/mlex_computing_api)
+Note: the current version of content registry no longer requires installing [mlex\_compute\_api](https://github.com/mlexchange/mlex_computing_api) as a pre-requisition.
 
 **Note:** This version connects to a local mongodb container named `mongodb` with a port number `27017`. Please checkout the `atlas` branch for using our cloud mongodb service.
 
 **Running content registry**.   
 
-1. Create the same environmental file (.env) as the one used in the compute api.
+1. Create an environmental file (.env) from the `.env.example` provided in the repository.
 
 	```	
 	MONGO_DB_USERNAME=your_username     
 	MONGO_DB_PASSWORD=your_password               
 	```	   
-2. If it was the first time running MLExchange content registry, you need to initialize its database using the command `./init_db.sh`. If the error msg says 'duplicate key error collection', it means the content database is already existent. 
-
-	**Note:** to re-initialize the database, it is suggested to first clean `/dump` folder in the local mongodb container.
    
-3. Run `docker-compose up --build`.
+2. Run `docker-compose up --build`.
 
 **Viewing existing contents**  
 Scroll down to the bottom of the page, click on **Refresh** button.
@@ -74,7 +71,7 @@ delete\_asset(uid)
 
 
 ## License
-MLExchange Copyright (c) 2021, The Regents of the University of California,
+MLExchange Copyright (c) 2024, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of
 any required approvals from the U.S. Dept. of Energy). All rights reserved.
 
