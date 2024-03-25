@@ -57,17 +57,6 @@ def toggle_app_port_inputform(app_type):
         return False
 
 
-@app.callback(
-    Output("collapse-open-app", "is_open"),
-    Input("tab-group","value"),
-)
-def toggle_open_app_button(tab_group):
-    if tab_group == 'workflow':
-        return False
-    else:
-        return True
-
-
 # might need collapse to handle id not found issues
 @app.callback( 
     Output("tab-display", "children"),
@@ -322,8 +311,6 @@ def json_generator(content_type, component_type, name, version, model_type, uri,
                                 component_combo[input_type] = options
                             else:
                                 component_combo[input_type] = input_value
-#                         else:
-#                             print('No value is found in the input form yet')
 
                     if component_combo["type"] == "int" and "value" in component_combo:
                         component_combo["value"] = int(component_combo["value"])
@@ -477,16 +464,13 @@ def show_gui_layouts(n_clicks, data):
 @app.callback(
     Output("dummy", "data"),
     Input("button-launch", "n_clicks"),
-    Input("terminate-user-jobs", "n_clicks"),
-    #State("table-model-list", "data"),
     State("table-contents-memo", "data"),
     State('table-model-list', 'selected_rows'),
     State("table-job-memo", "data"),
-    State('table-job-list', 'selected_rows'),
     State("tab-group","value"),
     prevent_initial_call=True,
 )
-def apps_jobs(n_clicks, n_terminate, data, rows, job_data, job_rows, tab_value):
+def apps_jobs(n_clicks, data, rows, job_data, tab_value):
     user_id = '001'
     changed_id = [p['prop_id'] for p in ctx.triggered][0]
     if "button-launch.n_clicks" in changed_id:
@@ -539,71 +523,7 @@ def apps_jobs(n_clicks, n_terminate, data, rows, job_data, job_rows, tab_value):
                 job_request['requirements']['num_nodes'] = 1
             response = requests.post('http://job-service:8080/api/v0/workflows', json=job_request)
             print(f'model/app response {response}')
-    
-    if "terminate-user-jobs.n_clicks" in changed_id:
-        print('Terminating jobs')
-        if job_rows:
-            for job_row in job_rows:
-                job_id = job_data[job_row]['uid']
-                print(f'terminate uid {job_id}')
-                if tab_value == 'workflow':
-                    response = requests.patch(f'http://job-service:8080/api/v0/workflows/{job_id}/terminate')
-                elif tab_value == 'model' or tab_value == 'app':
-                    response = requests.patch(f'http://job-service:8080/api/v0/jobs/{job_id}/terminate')
-
     return ''
-
-
-@app.callback(
-    Output("table-job-list", "data"),
-    Output("table-job-memo", "data"),
-    Input("tab-group","value"),
-    Input("monitoring", "n_intervals"),
-    prevent_initial_call=True,
-)
-def jobs_table(tab_value, n_interval):
-    user_id = '001'
-    job_list = []
-    if tab_value == 'workflow':
-        #response = requests.get('http://job-service:8080/api/v0/workflows', params={'state':'running'}).json()
-        #response = requests.get('http://job-service:8080/api/v0/workflows?user={user_id}').json()
-        response = requests.get('http://job-service:8080/api/v0/workflows').json()
-    elif tab_value == 'model' or tab_value == 'app':
-        response = requests.get('http://job-service:8080/api/v0/jobs').json()
-
-    for i,job in enumerate(response):
-        job_uid = job['uid']
-        job['submission_time'] = job['timestamps']['submission_time']
-        job['execution_time'] = job['timestamps']['execution_time']
-        job['job_status'] = job['status']['state']
-        if tab_value == 'model' or tab_value == 'app':
-            job['description'] = job['job_kwargs']['uri']
-        job_list.append(job)
-
-    return filter_dash_table_data(job_list[::-1], ContentVariables.JOB_KEYS), job_list[::-1]
-
-
-@app.callback(
-    Output("web-urls", "data"),
-    Input("button-open-window", "n_clicks"),
-    State("table-job-memo", "data"),
-    State('table-job-list', 'selected_rows'),
-    prevent_initial_call=True,
-)
-def update_app_url(n_clicks, jobs, rows):
-    web_urls = []
-    if rows:
-        for row in rows:
-            if jobs[row]['service_type'] == 'frontend' and 'map' in jobs[row]['job_kwargs']:
-                mapping = jobs[row]['job_kwargs']['map']
-                for key in mapping:
-                    port = mapping.get(key)
-                    if port:
-                        port=port[0]["HostPort"]
-                        web_url = "http://localhost:{}".format(port)
-                        web_urls.append(web_url)
-    
-    return web_urls
 
 
 app.clientside_callback(
