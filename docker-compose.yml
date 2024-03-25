@@ -1,6 +1,19 @@
 version: "3"
 
 services:
+  mongo:
+    image: mongo:4.4
+    restart: always
+    container_name: "mongodb"
+    working_dir: "/database/"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: '${MONGO_DB_USERNAME}'
+      MONGO_INITDB_ROOT_PASSWORD: '${MONGO_DB_PASSWORD}'
+    volumes:
+      - "${PWD}/database/:/data/db"
+      - ./mongo_import.sh:/docker-entrypoint-initdb.d/mongo_import.sh
+      - "${PWD}/data/dump:/dump"
+
   content-api:
     restart: "unless-stopped"
     container_name: "content-api"
@@ -13,9 +26,7 @@ services:
     volumes:
       - ./content-api/src:/app/api/src
     ports:
-      - "8000:8000"
-    networks:
-      - computing_api_default
+      - "127.0.0.1:8000:8000"
 
   content-registry:
     restart: "unless-stopped"
@@ -31,12 +42,7 @@ services:
       - ./content-regist/data:/app/content-regist/data    
       - ./content-regist/src:/app/content-regist/src
     ports:
-      - "8051:8051"
-    networks:
-      - computing_api_default  
+      - "127.0.0.1:8051:8051"
 
-networks:
-  computing_api_default:
-    external: true
 
 
