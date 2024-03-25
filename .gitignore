@@ -3,6 +3,7 @@
 content-api/src/__pycache__/*
 content-regist/src/__pycache__/*
 content-regist/src/kwarg_editor_copy.py
+database/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
