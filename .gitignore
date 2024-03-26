@@ -1,3 +1,6 @@
+# ggshield
+.cache_ggshield
+
 # Dirctory
 .DS_Store
 content-api/src/__pycache__/*

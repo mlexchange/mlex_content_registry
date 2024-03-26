@@ -37,12 +37,9 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: '${MONGO_DB_USERNAME}'
       MONGO_INITDB_ROOT_PASSWORD: '${MONGO_DB_PASSWORD}'
-      CONTAINER_WORKING_DIR: "${PWD}/data"  # working_directory (workflow dict) when launching jobs from content registry 
+      CONTAINER_WORKING_DIR: "${PWD}/data"  # working_directory (workflow dict) when launching jobs from content registry
     volumes:
-      - ./content-regist/data:/app/content-regist/data    
+      - ./content-regist/data:/app/content-regist/data
       - ./content-regist/src:/app/content-regist/src
     ports:
       - "127.0.0.1:8051:8051"
-
-
-
