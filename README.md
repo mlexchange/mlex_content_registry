@@ -19,8 +19,6 @@ Contents include:
 
 ## How to use
 
-Note: the current version of content registry no longer requires installing [mlex\_compute\_api](https://github.com/mlexchange/mlex_computing_api) as a pre-requisition.
-
 **Note:** This version connects to a local mongodb container named `mongodb` with a port number `27017`. Please checkout the `atlas` branch for using our cloud mongodb service.
 
 **Running content registry**.
