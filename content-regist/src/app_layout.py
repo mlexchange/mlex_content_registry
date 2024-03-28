@@ -532,14 +532,6 @@ table_models = dbc.Card(
         dbc.CardBody(
             [
                 dbc.Button(
-                    "Launch the Selected",
-                    id="button-launch",
-                    className="mtb-2",
-                    color="success",
-                    size="sm",
-                    n_clicks=0,
-                ),
-                dbc.Button(
                     "Delete the Selected",
                     id="button-delete",
                     className="m-2",

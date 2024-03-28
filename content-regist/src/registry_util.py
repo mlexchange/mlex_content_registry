@@ -273,24 +273,6 @@ def workflow_dependency(workflow):
     return workflow_list, dependency
 
 
-def job_content_dict(content, user_id):
-    job_content = {
-        "mlex_app": content["name"],
-        "service_type": content["service_type"],
-        "working_directory": f"{WORKING_DIR}",
-        "job_kwargs": {"uri": content["uri"], "cmd": content["cmd"][0]},
-    }
-    if "map" in content:
-        job_content["job_kwargs"]["map"] = content["map"]
-
-    if "container_kwargs" in content:
-        job_content["job_kwargs"]["container_kwargs"] = {
-            "environment": [f"DATA_DIR={WORKING_DIR}"]
-        }
-
-    return job_content
-
-
 def send_webhook(msg):
     """
     Send a webhook to a specified URL

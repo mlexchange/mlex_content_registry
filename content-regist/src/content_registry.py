@@ -5,7 +5,6 @@ import re
 import uuid
 
 import dash_bootstrap_components as dbc
-import requests
 from app_layout import ContentVariables, app, dash_forms, data_uploader
 from dash import ALL, MATCH, Input, Output, State, ctx, dcc, html
 from dash_component_editor import JSONParameterEditor
@@ -20,11 +19,9 @@ from form_generator import (
 )
 from registry_util import (
     conn_mongodb,
-    get_content,
     get_content_list,
     get_dash_table_data,
     get_dropdown_options,
-    job_content_dict,
     remove_key_from_dict_list,
     send_webhook,
     validate_json,
@@ -643,99 +640,6 @@ def show_gui_layouts_validation(n_clicks, data):
             return [""]
     else:
         return [""]
-
-
-# ---------------------------------- launch jobs ------------------------------------------
-@app.callback(
-    Output("dummy", "data"),
-    Input("button-launch", "n_clicks"),
-    State("table-contents-memo", "data"),
-    State("table-model-list", "selected_rows"),
-    State("table-job-memo", "data"),
-    State("tab-group", "value"),
-    prevent_initial_call=True,
-)
-def apps_jobs(n_clicks, data, rows, job_data, tab_value):
-    user_id = "001"
-    changed_id = [p["prop_id"] for p in ctx.triggered][0]
-    if "button-launch.n_clicks" in changed_id:
-        job_request = {
-            "user_uid": user_id,
-            "host_list": [
-                "mlsandbox.als.lbl.gov",
-                "local.als.lbl.gov",
-                "vaughan.als.lbl.gov",
-            ],
-            "requirements": {"num_processors": 2, "num_gpus": 0, "num_nodes": 2},
-        }
-
-        job_list = []
-        dependency = {}
-        job_names = ""
-        if tab_value == "workflow":
-            if rows:
-                for row in rows:
-                    job_list = []
-                    dependency = {}
-                    print(f"data[row] {data[row]}")
-                    if "workflow_list" in data[row]:
-                        workflow_list = data[row]["workflow_list"]
-                        for i, job_id in enumerate(workflow_list):
-                            job_list.append(
-                                job_content_dict(get_content(job_id), user_id)
-                            )
-                            print(f"job_list {job_list}")
-                            dependency[str(i)] = []
-                            if data[row]["workflow_type"] == "serial":
-                                for j in range(i):
-                                    dependency[str(i)].append(j)
-
-                    job_request["job_list"] = job_list
-                    job_request["dependencies"] = dependency
-                    job_request["description"] = (
-                        data[row]["name"] + " v" + data[row]["version"]
-                    )
-                    if len(job_list) == 1:
-                        job_request["requirements"]["num_nodes"] = 1
-                    response = requests.post(
-                        "http://job-service:8080/api/v0/workflows", json=job_request
-                    )
-                    print(f"workflow response {response}")
-
-        elif tab_value == "model" or tab_value == "app":
-            if rows:
-                for i, row in enumerate(rows):
-                    job_content = job_content_dict(data[row], user_id)
-                    job_list.append(job_content)
-                    dependency[str(i)] = (
-                        []
-                    )  # all modes and apps are regarded as independent at this time
-                    job_names += job_content["mlex_app"] + ", "
-
-            job_request["job_list"] = job_list
-            job_request["dependencies"] = dependency
-            job_request["description"] = "parallel workflow: " + job_names
-            if len(job_list) == 1:
-                job_request["requirements"]["num_nodes"] = 1
-            response = requests.post(
-                "http://job-service:8080/api/v0/workflows", json=job_request
-            )
-            print(f"model/app response {response}")
-    return ""
-
-
-app.clientside_callback(
-    """
-    function(web_urls) {
-        for (let i = 0; i < web_urls.length; i++) {
-            window.open(web_urls[i]);
-        }
-        return '';
-    }
-    """,
-    Output("dummy1", "data"),
-    Input("web-urls", "data"),
-)
 
 
 if __name__ == "__main__":
