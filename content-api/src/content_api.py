@@ -12,8 +12,8 @@ config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 USER_API_PORT = config["user api port"]["USER_API_PORT"]
 SEARCH_API_PORT = config["search api port"]["SEARCH_API_PORT"]
-MONGO_DB_USERNAME = os.getenv["MONGO_INITDB_ROOT_USERNAME"]
-MONGO_DB_PASSWORD = os.getenv["MONGO_INITDB_ROOT_PASSWORD"]
+MONGO_DB_USERNAME = os.getenv("MONGO_INITDB_ROOT_USERNAME")
+MONGO_DB_PASSWORD = os.getenv("MONGO_INITDB_ROOT_PASSWORD")
 MONGO_DB_URI = "mongodb://%s:%s@mongodb:27017/?authSource=admin" % (
     MONGO_DB_USERNAME,
     MONGO_DB_PASSWORD,
